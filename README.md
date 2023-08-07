@@ -2,11 +2,11 @@
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-This is an extension of the [SB3](https://stable-baselines3.readthedocs.io/en/master/) package that provides ROS support for Stable Baselines3. It allows you to train robotics RL agents in the real world and simulations using ROS.
+This package is an extension of the [SB3](https://stable-baselines3.readthedocs.io/en/master/) package that provides ROS support for Stable Baselines3. It allows you to train robotics RL agents in the real world and simulations using ROS.
 
 This package extends the functionality of SB3 models in [FRobs_RL](https://github.com/jmfajardod/frobs_rl) package to provides the following features:
- 1. Support for goal conditioned RL tasks
- 2. HER (Hindsight Experience Replay) for goal conditioned RL tasks
+ 1. Support for goal-conditioned RL tasks
+ 2. HER (Hindsight Experience Replay) for goal-conditioned RL tasks
  3. Support for training custom environments with [ROS_RL](https://github.com/ncbdrck/ros_rl) or [MultiROS](https://github.com/ncbdrck/multiros) frameworks
 
 ## Prerequisites
@@ -17,7 +17,10 @@ Before installing this package, make sure you have the following prerequisites:
 
 This package requires a working installation of ROS. If you haven't installed ROS yet, please follow the official [ROS installation guide](http://wiki.ros.org/ROS/Installation) for your specific operating system. This package has been tested with [ROS Noetic](http://wiki.ros.org/noetic) version.
 
-Please note that the instructions assume you are using Ubuntu 20.04 and ROS Noetic. If you are using a different operating system or ROS version, make sure to adapt the commands accordingly.
+###  ROS Workspace
+Before using this package, you need a ROS workspace to build and run your ROS packages. If you are using a different operating system or ROS version, make sure to adapt the commands accordingly. Follow the steps in the [official guide](http://wiki.ros.org/catkin/Tutorials/create_a_workspace) to create a workspace if you haven't done already.
+
+Please note that the instructions assume you are using Ubuntu 20.04 and ROS Noetic. 
 
 ## Installation
 
@@ -84,7 +87,7 @@ if __name__ == '__main__':
     # normal environments
     env_base = gym.make('RX200ReacherEnvSim-v0', gazebo_gui=False)
    
-    # goal conditioned environments
+    # goal-conditioned environments
     env_goal = gym.make('RX200ReacherGoalEnvSim-v0', gazebo_gui=True, ee_action_type=False, 
                         delta_action=False, reward_type="sparse")
    
@@ -107,7 +110,7 @@ if __name__ == '__main__':
     model_base.train()
     model_base.save_model()
     
-    # goal conditioned environments
+    # goal-conditioned environments
     model_goal = SAC_GOAL(env_goal, save_path, log_path, model_pkg_path=pkg_path, 
                           config_file_pkg=pkg_path, config_filename=config_file_name_goal)
     
@@ -129,7 +132,7 @@ if __name__ == '__main__':
 
     env_base.close()
     
-    # we can also use the goal conditioned model to validate the normal environment
+    # we can also use the goal-conditioned model to validate the normal environment
     # Just follow the same procedure as above. Not shown here.
     env_goal.close()
     
@@ -138,7 +141,7 @@ if __name__ == '__main__':
                                    model_pkg_path= pkg_path)
     # then you can follow the same validation procedure as above
 ```
-**Note**: please note that the examples are provided for reference only. You may need to modify the code to suit your specific needs.
+**Note**: Please note that the examples are provided for reference only. You may need to modify the code to suit your specific needs.
 
 ## License
 
@@ -170,4 +173,4 @@ Repository
 
 ## Contact
 
-For questions, suggestions, or collaborations, feel free to reach out to the project maintainer at [j.kapukotuwa@research.ait.ie](mailto:j.kapukotuwa@research.ait.ie).
+For questions, suggestions, or collaborations, contact the project maintainer at [j.kapukotuwa@research.ait.ie](mailto:j.kapukotuwa@research.ait.ie).
