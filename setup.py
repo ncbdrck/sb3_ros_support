@@ -8,7 +8,7 @@ setup_args = generate_distutils_setup(
     package_dir={'': 'src'},
 
     description="Stable Baselines3 Support for ROS",
-    url="https://github.com/ncbdrck/ros_rl/",
+    url="https://github.com/ncbdrck/sb3_support",
     keywords=['ROS', 'reinforcement learning', 'machine-learning', 'gym', 'robotics', 'openai', 'stable-baselines3'],
 
     author='Jayasekara Kapukotuwa',
