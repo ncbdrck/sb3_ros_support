@@ -29,24 +29,24 @@ def load_yaml(pkg_name=None, file_name=None, file_abs_path=None) -> dict:
             rospy.logdebug(f"Package {pkg_name} located!.")
         except rospkg.common.ResourceNotFound:
             rospy.logerr(f"Package {pkg_name} not found!.")
-            return dict([])
+            raise rospkg.common.ResourceNotFound(f"Package {pkg_name} not found!.")
 
         file_abs_path = pkg_path + "/config/" + file_name
         if os.path.exists(pkg_path + "/config/" + file_name) is False:
             print(f"Config file {file_name} in {file_abs_path} does not exist")
-            return dict([])
+            raise FileNotFoundError(f"Config file {file_name} in {file_abs_path} does not exist")
 
     # If pkg_name and file_name are both None but file_abs_path is not None,
     # check if the YAML file exists at the given absolute path
     elif file_abs_path is not None:
         if os.path.exists(file_abs_path) is False:
             print(f"Config file {file_abs_path} does not exist!")
-            return dict([])
+            raise FileNotFoundError(f"Config file {file_abs_path} does not exist!")
 
     # If none of these conditions are met, return False
     else:
         print("Load Failed! Requires either the absolute path or the pkg_name and the file_name as input!")
-        return dict([])
+        raise FileNotFoundError("Load Failed! Requires either the absolute path or the pkg_name and the file_name as input!")
 
     # If the YAML file exists, load it and return the dictionary
     with open(file_abs_path, 'r') as stream:
