@@ -1,0 +1,14 @@
+# SB3 Requirements
+
+# To install required packages use:
+# python3 -m pip install -r requirements.txt
+
+# stable-baselines3 for RL algorithms
+stable-baselines3
+
+# NumPy for numerical computations
+numpy
+
+# pyyaml for loading YAML files
+pyyaml
+
