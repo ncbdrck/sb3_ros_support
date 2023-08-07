@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>sb3_support</name>
+  <name>sb3_ros_support</name>
   <version>0.0.1</version>
-  <description>Stable Baselines3 Support for ROS</description>
+  <description>The ROS Support Package for Stable Baselines3</description>
 
   <author email="j.kapukotuwa@research.ait.ie">Jayasekara Kapukotuwa</author>
   <maintainer email="j.kapukotuwa@research.ait.ie">Jayasekara Kapukotuwa</maintainer>

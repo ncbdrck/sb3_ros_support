@@ -9,7 +9,7 @@ Recreated to overcome the following errors:
 """
 import os
 from datetime import datetime
-from sb3_support.utils.sb3_common import get_policy_kwargs, get_action_noise, test_env
+from sb3_ros_support.utils.sb3_common import get_policy_kwargs, get_action_noise, test_env
 
 # ROS packages required
 import rospy

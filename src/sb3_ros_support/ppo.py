@@ -2,8 +2,8 @@
 
 import os
 import stable_baselines3
-from sb3_support import core
-from sb3_support.utils import yaml_utils
+from sb3_ros_support import core
+from sb3_ros_support.utils import yaml_utils
 
 # ROS packages required
 import rospy
@@ -136,19 +136,19 @@ class PPO(core.BasicModel):
             self.set_model_logger()
 
 
-def load_trained_model(model_path, model_pkg_path=None, env=None):
-    """
-    Load a trained model. Use only with predict function, as the logs will not be saved.
+    def load_trained_model(model_path, model_pkg_path=None, env=None):
+        """
+        Load a trained model. Use only with predict function, as the logs will not be saved.
 
-    Args:
-        model_path (str): The path to the trained model.
-        model_pkg_path (str): The package name to load the model.
-        env (gym.Env): The environment to be used.
-    Returns:
-        model: The loaded model.
-    """
+        Args:
+            model_path (str): The path to the trained model.
+            model_pkg_path (str): The package name to load the model.
+            env (gym.Env): The environment to be used.
+        Returns:
+            model: The loaded model.
+        """
 
-    model = PPO(env=env, save_model_path=model_path, log_path=model_path, load_model_path=model_path,
-                model_pkg_path=model_pkg_path, load_trained=True)
+        model = PPO(env=env, save_model_path=model_path, log_path=model_path, load_model_path=model_path,
+                    model_pkg_path=model_pkg_path, load_trained=True)
 
-    return model
+        return model
