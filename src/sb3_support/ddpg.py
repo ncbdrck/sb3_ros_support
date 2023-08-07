@@ -19,17 +19,18 @@ class DDPG(core.BasicModel):
     """
 
     def __init__(self, env, save_model_path, log_path, model_pkg_path=None, load_trained=False,
-                 load_model_path=None, config_file_pkg="sb3_support", config_filename="ddpg.yaml"):
+                 load_model_path=None, config_file_pkg=None, config_filename=None, abs_config_path=None):
         """
         Args:
             env (gym.Env): The environment to be used.
-            save_model_path (str): The path to save the model.
-            log_path (str): The abs path to save the log.
+            save_model_path (str): The path to save the model. Can be absolute or relative.
+            log_path (str): The abs path to save the log. Can be absolute or relative.
             model_pkg_path (str): The package name to save or load the model.
             load_trained (bool): Whether to load a trained model or not.
-            load_model_path (str): The path to load the model. Should include the model name.
-            config_file_pkg (str): The package name of the config file.
-            config_filename (str): The name of the config file.
+            load_model_path (str): The path to load the model. Should include the model name. Can be absolute or relative.
+            config_file_pkg (str): The package name of the config file. Required if abs_config_path is not provided.
+            config_filename (str): The name of the config file. Required if abs_config_path is not provided.
+            abs_config_path (str): The absolute path to the config file. Required if config_file_pkg and config_filename are not provided.
         """
 
         rospy.loginfo("Init DDPG Policy")
@@ -65,14 +66,12 @@ class DDPG(core.BasicModel):
 
                 load_model_path = pkg_path + load_model_path
 
-        self.save_model_path = save_model_path
-        self.save_trained_model_path = None
-
         # Load YAML Config File
-        parm_dict = yaml_utils.load_yaml(pkg_name=config_file_pkg, file_name=config_filename)
+        parm_dict = yaml_utils.load_yaml(pkg_name=config_file_pkg, file_name=config_filename,
+                                         file_abs_path=abs_config_path)
 
         # --- Init super class
-        super().__init__(env, save_model_path, log_path, load_trained=load_trained)
+        super().__init__(env, save_model_path, log_path, parm_dict, load_trained=load_trained)
 
         if load_trained:
             rospy.logwarn("Loading trained model")
@@ -121,22 +120,23 @@ class DDPG(core.BasicModel):
                                                     policy_kwargs=self.policy_kwargs,
                                                     train_freq=(model_train_freq_freq, model_train_freq_unit))
 
-                # --- Logger
+            # --- Logger
             self.set_model_logger()
 
-    def load_trained(model_path, env=None):
-        """
-        Load a trained model. Use only with predict function, as the logs will not be saved.
 
-        :param model_path: The path to the trained model.
-        :type model_path: str
-        :param env: The environment to be used.
-        :type env: gym.Env
+def load_trained_model(model_path, model_pkg_path=None, env=None):
+    """
+    Load a trained model. Use only with predict function, as the logs will not be saved.
 
-        :return: The trained model.
-        :rtype: frobs_rl.DDPG
-        """
+    Args:
+        model_path (str): The path to the trained model.
+        model_pkg_path (str): The package name to load the model.
+        env (gym.Env): The environment to be used.
+    Returns:
+        model: The loaded model.
+    """
 
-        model = DDPG(env=env, save_model_path=model_path, log_path=model_path, load_trained=True)
+    model = DDPG(env=env, save_model_path=model_path, log_path=model_path, load_model_path=model_path,
+                 model_pkg_path=model_pkg_path, load_trained=True)
 
-        return model
+    return model
