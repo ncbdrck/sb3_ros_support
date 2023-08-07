@@ -7,7 +7,7 @@ This is an extension of the [SB3](https://stable-baselines3.readthedocs.io/en/ma
 This package extends the functionality of SB3 models in [FRobs_RL](https://github.com/jmfajardod/frobs_rl) package to provides the following features:
  1. Support for goal conditioned RL tasks
  2. HER (Hindsight Experience Replay) for goal conditioned RL tasks
- 3. Support for training concurrent environments
+ 3. Support for training custom environments with [ROS_RL](https://github.com/ncbdrck/ros_rl) or [MultiROS](https://github.com/ncbdrck/multiros) frameworks
 
 ## Prerequisites
 
