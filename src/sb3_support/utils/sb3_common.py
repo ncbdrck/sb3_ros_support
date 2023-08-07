@@ -8,23 +8,24 @@ import stable_baselines3
 import rospy
 
 # Noise
-from stable_baselines3.common.noise import NormalActionNoise  # , OrnsteinUhlenbeckActionNoise
+from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 from stable_baselines3.common.env_checker import check_env
 
 
-def get_policy_kwargs(ns="/"):
+def get_policy_kwargs(parm_dict: dict) -> dict:
     """
-    Function to get the policy kwargs from the ROS params server.
+    Function to get the policy kwargs from the parm_dict.
 
-    @param ns: namespace of the ROS params server
-    @type ns: str
+    Args:
+        parm_dict (dict): The dictionary containing the parameters.
 
-    @return: policy kwargs
+    Returns:
+        dict: Dictionary containing the policy kwargs.
     """
 
-    if rospy.get_param(ns + "/model_params/use_custom_policy") == True:
+    if parm_dict["use_custom_policy"]:
         # Activation function for the policy
-        activation_function = rospy.get_param(ns + "/model_params/policy_params/activation_fn").lower()
+        activation_function = parm_dict["policy_params"]["activation_fn"].lower()
         if activation_function == "relu":
             activation_fn = th.nn.ReLU
         elif activation_function == "tanh":
@@ -33,18 +34,24 @@ def get_policy_kwargs(ns="/"):
             activation_fn = th.nn.ELU
         elif activation_function == "selu":
             activation_fn = th.nn.SELU
+        else:
+            rospy.logwarn("Activation function not found, using ReLU")
+            activation_fn = th.nn.ReLU
 
         # Feature extractor for the policy
-        feature_extractor = rospy.get_param(ns + "/model_params/policy_params/features_extractor_class")
+        feature_extractor = parm_dict["policy_params"]["features_extractor_class"]
         if feature_extractor == "FlattenExtractor":
             features_extractor_class = stable_baselines3.common.torch_layers.FlattenExtractor
         elif feature_extractor == "BaseFeaturesExtractor":
             features_extractor_class = stable_baselines3.common.torch_layers.BaseFeaturesExtractor
         elif feature_extractor == "CombinedExtractor":
             features_extractor_class = stable_baselines3.common.torch_layers.CombinedExtractor
+        else:
+            rospy.logwarn("Feature extractor not found, using FlattenExtractor")
+            features_extractor_class = stable_baselines3.common.torch_layers.FlattenExtractor
 
         # Optimizer for the policy
-        optimizer_class = rospy.get_param(ns + "/model_params/policy_params/optimizer_class")
+        optimizer_class = parm_dict["policy_params"]["optimizer_class"]
         if optimizer_class == "Adam":
             optimizer_class = th.optim.Adam
         elif optimizer_class == "SGD":
@@ -55,12 +62,17 @@ def get_policy_kwargs(ns="/"):
             optimizer_class = th.optim.Adagrad
         elif optimizer_class == "Adadelta":
             optimizer_class = th.optim.Adadelta
+        else:
+            rospy.logwarn("Optimizer not found, using Adam")
+            optimizer_class = th.optim.Adam
 
         # Net Archiecture for the policy
-        net_arch = rospy.get_param(ns + "/model_params/policy_params/net_arch")
+        net_arch = parm_dict["policy_params"]["net_arch"]
 
         policy_kwargs = dict(activation_fn=activation_fn, features_extractor_class=features_extractor_class,
                              optimizer_class=optimizer_class, net_arch=net_arch)
+
+        # log
         rospy.logwarn(policy_kwargs)
         print(policy_kwargs)
     else:
@@ -69,25 +81,51 @@ def get_policy_kwargs(ns="/"):
     return policy_kwargs
 
 
-def get_action_noise(action_space_shape, ns="/"):
+def get_action_noise(action_space_shape, parm_dict: dict, action_noise_type="normal"):
     """
-    Function to get the action noise from the ROS params server.
+    Function to get the action noise from the parm_dict.
 
-    @param action_space_shape: shape of the action space.
-    @param ns: namespace of the ROS params server
+    Args:
+        action_space_shape (int): The shape of the action space.
+        parm_dict (dict): The dictionary containing the parameters.
+        action_noise_type (str): The type of action noise to use. Can be "normal" or "ornstein".
+
+    Returns:
+        action_noise: The action noise.
     """
 
     action_noise = None
-
-    if rospy.has_param(ns + "/model_params/use_action_noise") is False:
-        rospy.loginfo("Parameter use_action_noise was not found on the parameter server.")
+    if parm_dict["use_action_noise"] is None:
+        rospy.loginfo("Parameter use_action_noise was not found")
         return action_noise
 
-    if rospy.get_param(ns + "/model_params/use_action_noise"):
-        action_mean = rospy.get_param(ns + "/model_params/action_noise/mean")
-        action_sigma = rospy.get_param(ns + "/model_params/action_noise/sigma")
-        action_noise = NormalActionNoise(mean=action_mean * np.ones(action_space_shape),
-                                         sigma=action_sigma * np.ones(action_space_shape))
+    if parm_dict["use_action_noise"] is True:
+        action_mean = parm_dict["action_noise"]["mean"]
+        action_sigma = parm_dict["action_noise"]["sigma"]
+
+        # normal
+        if action_noise_type == "normal":
+
+            # create noise
+            action_noise = NormalActionNoise(mean=action_mean * np.ones(action_space_shape),
+                                             sigma=action_sigma * np.ones(action_space_shape))
+
+        # ornstein
+        elif action_noise_type == "ornstein":
+            action_theta = parm_dict["action_noise"]["theta"]
+            action_dt = parm_dict["action_noise"]["dt"]
+
+            # initial noise
+            if parm_dict["action_noise"]["initial_noise"] is None:
+                action_initial_noise = parm_dict["action_noise"]["initial_noise"]
+            else:
+                action_initial_noise = None
+
+            # create noise
+            action_noise = OrnsteinUhlenbeckActionNoise(mean=action_mean * np.ones(action_space_shape),
+                                                        sigma=action_sigma * np.ones(action_space_shape),
+                                                        theta=action_theta, dt=action_dt,
+                                                        initial_noise=action_initial_noise)
 
     return action_noise
 
