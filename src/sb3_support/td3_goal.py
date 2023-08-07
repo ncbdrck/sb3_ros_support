@@ -10,7 +10,7 @@ import rospy
 import rospkg
 
 
-class TD3(core.BasicModel):
+class TD3_GOAL(core.BasicModel):
     """
     Twin Delayed DDPG (TD3) algorithm.
 
@@ -18,7 +18,8 @@ class TD3(core.BasicModel):
     """
 
     def __init__(self, env, save_model_path, log_path, model_pkg_path=None, load_trained=False,
-                 load_model_path=None, config_file_pkg=None, config_filename=None, abs_config_path=None):
+                 load_model_path=None, config_file_pkg=None, config_filename=None, abs_config_path=None,
+                 use_her=False):
         """
         Args:
             env (gym.Env): The environment to be used.
@@ -30,10 +31,11 @@ class TD3(core.BasicModel):
             config_file_pkg (str): The package name of the config file. Required if abs_config_path is not provided.
             config_filename (str): The name of the config file. Required if abs_config_path is not provided.
             abs_config_path (str): The absolute path to the config file. Required if config_file_pkg and config_filename are not provided.
+            use_her (bool): Whether to use Hindsight Experience Replay or not.
         """
 
-        rospy.loginfo("Init TD3 Policy")
-        print("Init TD3 Policy")
+        rospy.loginfo("Init TD3 MultiInputPolicy")
+        print("Init TD3 MultiInputPolicy")
 
         # --- Set the environment
         self.env = env
@@ -99,17 +101,63 @@ class TD3(core.BasicModel):
                     model_name)
                 rospy.logwarn("Loading model: " + model_name)
 
-                self.model = stable_baselines3.TD3.load(save_model_path + model_name, env=env, verbose=1,
-                                                        action_noise=self.action_noise,
-                                                        learning_rate=model_learning_rate,
-                                                        buffer_size=model_buffer_size,
-                                                        learning_starts=model_learning_starts,
-                                                        batch_size=model_batch_size, tau=model_tau, gamma=model_gamma,
-                                                        gradient_steps=model_gradient_steps,
-                                                        policy_delay=model_policy_delay,
-                                                        target_policy_noise=model_target_policy_noise,
-                                                        target_noise_clip=model_target_noise_clip,
-                                                        train_freq=(model_train_freq_freq, model_train_freq_unit))
+                if use_her or parm_dict["use_HER"]:
+                    # HER parameters
+                    if "n_sampled_goal" in parm_dict["her_params"]:
+                        n_sampled_goal = parm_dict["her_params"]["n_sampled_goal"]
+                    else:
+                        n_sampled_goal = 4
+
+                    if "goal_selection_strategy" in parm_dict["her_params"]:
+                        goal_selection_strategy = parm_dict["her_params"]["goal_selection_strategy"]
+                    else:
+                        goal_selection_strategy = "future"
+
+                    if "max_episode_length" in parm_dict["her_params"]:
+                        max_episode_length = parm_dict["her_params"]["max_episode_length"]
+                    else:
+                        max_episode_length = None
+
+                    if "online_sampling" in parm_dict["her_params"]:
+                        online_sampling = parm_dict["her_params"]["online_sampling"]
+                    else:
+                        online_sampling = True
+
+                    self.model = stable_baselines3.TD3.load(save_model_path + model_name, env=env, verbose=1,
+                                                            action_noise=self.action_noise,
+                                                            learning_rate=model_learning_rate,
+                                                            buffer_size=model_buffer_size,
+                                                            learning_starts=model_learning_starts,
+                                                            batch_size=model_batch_size, tau=model_tau,
+                                                            gamma=model_gamma,
+                                                            gradient_steps=model_gradient_steps,
+                                                            policy_delay=model_policy_delay,
+                                                            target_policy_noise=model_target_policy_noise,
+                                                            target_noise_clip=model_target_noise_clip,
+                                                            train_freq=(model_train_freq_freq, model_train_freq_unit),
+
+                                                            replay_buffer_class=stable_baselines3.HerReplayBuffer,
+                                                            replay_buffer_kwargs=dict(
+                                                                n_sampled_goal=n_sampled_goal,
+                                                                goal_selection_strategy=goal_selection_strategy,
+                                                                max_episode_length=max_episode_length,
+                                                                online_sampling=online_sampling, )
+                                                            )
+
+                else:
+
+                    self.model = stable_baselines3.TD3.load(save_model_path + model_name, env=env, verbose=1,
+                                                            action_noise=self.action_noise,
+                                                            learning_rate=model_learning_rate,
+                                                            buffer_size=model_buffer_size,
+                                                            learning_starts=model_learning_starts,
+                                                            batch_size=model_batch_size, tau=model_tau,
+                                                            gamma=model_gamma,
+                                                            gradient_steps=model_gradient_steps,
+                                                            policy_delay=model_policy_delay,
+                                                            target_policy_noise=model_target_policy_noise,
+                                                            target_noise_clip=model_target_noise_clip,
+                                                            train_freq=(model_train_freq_freq, model_train_freq_unit))
 
                 if os.path.exists(save_model_path + model_name + "_replay_buffer.pkl"):
                     rospy.logwarn("Loading replay buffer")
@@ -120,15 +168,61 @@ class TD3(core.BasicModel):
             else:  # Create new model
                 rospy.logwarn("Creating new model")
 
-                self.model = stable_baselines3.TD3("MlpPolicy", env, verbose=1, action_noise=self.action_noise,
-                                                   learning_rate=model_learning_rate, buffer_size=model_buffer_size,
-                                                   learning_starts=model_learning_starts,
-                                                   batch_size=model_batch_size, tau=model_tau, gamma=model_gamma,
-                                                   gradient_steps=model_gradient_steps,
-                                                   policy_kwargs=self.policy_kwargs, policy_delay=model_policy_delay,
-                                                   target_policy_noise=model_target_policy_noise,
-                                                   target_noise_clip=model_target_noise_clip,
-                                                   train_freq=(model_train_freq_freq, model_train_freq_unit))
+                if use_her or parm_dict["use_HER"]:
+                    # HER parameters
+                    if "n_sampled_goal" in parm_dict["her_params"]:
+                        n_sampled_goal = parm_dict["her_params"]["n_sampled_goal"]
+                    else:
+                        n_sampled_goal = 4
+
+                    if "goal_selection_strategy" in parm_dict["her_params"]:
+                        goal_selection_strategy = parm_dict["her_params"]["goal_selection_strategy"]
+                    else:
+                        goal_selection_strategy = "future"
+
+                    if "max_episode_length" in parm_dict["her_params"]:
+                        max_episode_length = parm_dict["her_params"]["max_episode_length"]
+                    else:
+                        max_episode_length = None
+
+                    if "online_sampling" in parm_dict["her_params"]:
+                        online_sampling = parm_dict["her_params"]["online_sampling"]
+                    else:
+                        online_sampling = True
+
+                    self.model = stable_baselines3.TD3("MultiInputPolicy", env, verbose=1,
+                                                       action_noise=self.action_noise,
+                                                       learning_rate=model_learning_rate, buffer_size=model_buffer_size,
+                                                       learning_starts=model_learning_starts,
+                                                       batch_size=model_batch_size, tau=model_tau, gamma=model_gamma,
+                                                       gradient_steps=model_gradient_steps,
+                                                       policy_kwargs=self.policy_kwargs,
+                                                       policy_delay=model_policy_delay,
+                                                       target_policy_noise=model_target_policy_noise,
+                                                       target_noise_clip=model_target_noise_clip,
+                                                       train_freq=(model_train_freq_freq, model_train_freq_unit),
+
+                                                       replay_buffer_class=stable_baselines3.HerReplayBuffer,
+                                                       replay_buffer_kwargs=dict(
+                                                           n_sampled_goal=n_sampled_goal,
+                                                           goal_selection_strategy=goal_selection_strategy,
+                                                           max_episode_length=max_episode_length,
+                                                           online_sampling=online_sampling, )
+                                                       )
+
+                else:
+
+                    self.model = stable_baselines3.TD3("MultiInputPolicy", env, verbose=1,
+                                                       action_noise=self.action_noise,
+                                                       learning_rate=model_learning_rate, buffer_size=model_buffer_size,
+                                                       learning_starts=model_learning_starts,
+                                                       batch_size=model_batch_size, tau=model_tau, gamma=model_gamma,
+                                                       gradient_steps=model_gradient_steps,
+                                                       policy_kwargs=self.policy_kwargs,
+                                                       policy_delay=model_policy_delay,
+                                                       target_policy_noise=model_target_policy_noise,
+                                                       target_noise_clip=model_target_noise_clip,
+                                                       train_freq=(model_train_freq_freq, model_train_freq_unit))
 
             # --- Logger
             self.set_model_logger()
@@ -146,7 +240,7 @@ def load_trained_model(model_path, model_pkg_path=None, env=None):
         model: The loaded model.
     """
 
-    model = TD3(env=env, save_model_path=model_path, log_path=model_path, load_model_path=model_path,
-                model_pkg_path=model_pkg_path, load_trained=True)
+    model = TD3_GOAL(env=env, save_model_path=model_path, log_path=model_path, load_model_path=model_path,
+                     model_pkg_path=model_pkg_path, load_trained=True)
 
     return model
