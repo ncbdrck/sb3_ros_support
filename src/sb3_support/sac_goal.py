@@ -81,8 +81,8 @@ class SAC_GOAL(core.BasicModel):
             # --- SDE for SAC
             if parm_dict["use_sde"]:
                 model_sde = True
-                model_sde_sample_freq = parm_dict["sde_sample_freq"]
-                model_use_sde_at_warmup = parm_dict["use_sde_at_warmup"]
+                model_sde_sample_freq = parm_dict["sde_params"]["sde_sample_freq"]
+                model_use_sde_at_warmup = parm_dict["sde_params"]["use_sde_at_warmup"]
                 self.action_noise = None
             else:
                 model_sde = False
