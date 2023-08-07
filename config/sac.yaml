@@ -1,8 +1,6 @@
 # YAML Document starts with ---
 # Comments start with #
 ---
-model_params:
-
   # Training 
   training_steps: 200000      # The number of training steps to perform
 
