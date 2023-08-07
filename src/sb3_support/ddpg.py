@@ -1,15 +1,13 @@
 #!/bin/python3
 
 import os
-
-import rospkg
 import stable_baselines3
 from sb3_support import core
 from sb3_support.utils import yaml_utils
 
 # ROS packages required
 import rospy
-
+import rospkg
 
 class DDPG(core.BasicModel):
     """
