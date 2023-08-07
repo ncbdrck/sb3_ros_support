@@ -27,13 +27,16 @@ class BasicModel:
     Base class for all the algorithms of Stable Baselines3.
     """
 
-    def __init__(self, env, save_model_path, log_path, load_trained=False) -> None:
+    def __init__(self, env, save_model_path, log_path, parm_dict, load_trained=False,
+                 action_noise_type="normal") -> None:
         """
         Args:
             env (gym.Env): The environment to be used.
             save_model_path (str): The path to save the model.
+            parm_dict (dict): The dictionary containing the parameters.
             log_path (str): The path to save the log.
             load_trained (bool): Whether to load a trained model or not.
+            action_noise_type (str): The type of action noise to use. Can be "normal" or "ornstein".
         """
 
         self.env = env
@@ -44,10 +47,10 @@ class BasicModel:
 
         if load_trained is False:
             # --- Policy kwargs
-            self.policy_kwargs = get_policy_kwargs(ns=ns)
+            self.policy_kwargs = get_policy_kwargs(parm_dict)
 
             # --- Noise kwargs
-            self.action_noise = get_action_noise(self.env.action_space.shape[-1], ns=ns)
+            self.action_noise = get_action_noise(self.env.action_space.shape[-1], parm_dict, action_noise_type)
 
             # --- Callback
             save_freq = rospy.get_param(ns + "/model_params/save_freq")

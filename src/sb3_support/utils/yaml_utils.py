@@ -13,9 +13,9 @@ def load_yaml(pkg_name=None, file_name=None, file_abs_path=None) -> dict:
     Fetch a YAML file from a package or an abs path, parse and converts to a Python dictionary.
 
     Args:
-        pkg_name (str): name of package.
-        file_name (str): name of file.
-        file_abs_path (str): Absolute path of the YAML file.
+        pkg_name (str): name of package. Required if file_abs_path is None.
+        file_name (str): name of file. Required if file_abs_path is None.
+        file_abs_path (str): Absolute path of the YAML file. Required if pkg_name and file_name are None.
 
     Returns:
         dict: Dictionary containing the YAML file.
@@ -56,5 +56,5 @@ def load_yaml(pkg_name=None, file_name=None, file_abs_path=None) -> dict:
         except yaml.YAMLError as exc:
             print(exc)
             return dict([])
-        
+
 
