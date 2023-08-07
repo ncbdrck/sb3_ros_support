@@ -1,75 +1,104 @@
 #!/bin/python3
 
-
 import os
 import stable_baselines3
-from frobs_rl.common import ros_params
-from frobs_rl.models import basic_model
+from sb3_support import core
+from sb3_support.utils import yaml_utils
 
 # ROS packages required
 import rospy
+import rospkg
 
 
-class TD3(basic_model.BasicModel):
+class TD3(core.BasicModel):
     """
     Twin Delayed DDPG (TD3) algorithm.
 
     Paper: https://arxiv.org/abs/1802.09477
-
-    :param env: The environment to be used.
-    :param save_model_path: The path to save the model.
-    :param log_path: The path to save the log.
-    :param load_trained: Whether to load a trained model(Used in load function).
-
-    :param config_file_pkg: The package where the config file is located. Default: frobs_rl.
-    :param config_filename: The name of the config file. Default: td3_config.yaml.
-    :param ns: The namespace of the ROS parameters. Default: "/".
     """
 
-    def __init__(self, env, save_model_path, log_path, load_trained=False,
-                 config_file_pkg="frobs_rl", config_filename="td3_config.yaml", ns="/") -> None:
+    def __init__(self, env, save_model_path, log_path, model_pkg_path=None, load_trained=False,
+                 load_model_path=None, config_file_pkg=None, config_filename=None, abs_config_path=None):
         """
-        TD3 constructor.
+        Args:
+            env (gym.Env): The environment to be used.
+            save_model_path (str): The path to save the model. Can be absolute or relative.
+            log_path (str): The abs path to save the log. Can be absolute or relative.
+            model_pkg_path (str): The package name to save or load the model.
+            load_trained (bool): Whether to load a trained model or not.
+            load_model_path (str): The path to load the model. Should include the model name. Can be absolute or relative.
+            config_file_pkg (str): The package name of the config file. Required if abs_config_path is not provided.
+            config_filename (str): The name of the config file. Required if abs_config_path is not provided.
+            abs_config_path (str): The absolute path to the config file. Required if config_file_pkg and config_filename are not provided.
         """
 
         rospy.loginfo("Init TD3 Policy")
         print("Init TD3 Policy")
 
+        # --- Set the environment
         self.env = env
-        self.ns = ns
-        self.save_model_path = save_model_path
-        self.save_trained_model_path = None
+
+        # --- Set the save and log path
+        if model_pkg_path is not None:
+            rospack = rospkg.RosPack()
+            pkg_path = rospack.get_path(model_pkg_path)
+
+            # check if the path starts with "/"
+            if save_model_path[0] != "/":
+                save_model_path = "/" + save_model_path
+            if log_path[0] != "/":
+                log_path = "/" + log_path
+
+            # check if the path ends with "/"
+            if save_model_path[-1] != "/":
+                save_model_path = save_model_path + "/"
+            if log_path[-1] != "/":
+                log_path = log_path + "/"
+
+            save_model_path = pkg_path + save_model_path
+            log_path = pkg_path + log_path
+
+            if load_trained:
+                # check if the path starts with "/"
+                if load_model_path[0] != "/":
+                    load_model_path = "/" + load_model_path
+
+                load_model_path = pkg_path + load_model_path
 
         # Load YAML Config File
-        ros_params.ros_load_yaml_from_pkg(config_file_pkg, config_filename, ns=ns)
+        parm_dict = yaml_utils.load_yaml(pkg_name=config_file_pkg, file_name=config_filename,
+                                         file_abs_path=abs_config_path)
 
         # --- Init super class
-        super(TD3, self).__init__(env, save_model_path, log_path, load_trained=load_trained)
+        super().__init__(env, save_model_path, log_path, parm_dict, load_trained=load_trained)
 
         if load_trained:
             rospy.logwarn("Loading trained model")
-            self.model = stable_baselines3.TD3.load(save_model_path, env=env)
+            self.model = stable_baselines3.TD3.load(load_model_path, env=env)
         else:
+
             # --- TD3 model parameters
-            model_learning_rate = rospy.get_param(ns + "/model_params/td3_params/learning_rate")
-            model_buffer_size = rospy.get_param(ns + "/model_params/td3_params/buffer_size")
-            model_learning_starts = rospy.get_param(ns + "/model_params/td3_params/learning_starts")
-            model_batch_size = rospy.get_param(ns + "/model_params/td3_params/batch_size")
-            model_tau = rospy.get_param(ns + "/model_params/td3_params/tau")
-            model_gamma = rospy.get_param(ns + "/model_params/td3_params/gamma")
-            model_gradient_steps = rospy.get_param(ns + "/model_params/td3_params/gradient_steps")
-            model_train_freq_freq = rospy.get_param(ns + "/model_params/td3_params/train_freq/freq")
-            model_train_freq_unit = rospy.get_param(ns + "/model_params/td3_params/train_freq/unit")
-            model_policy_delay = rospy.get_param(ns + "/model_params/td3_params/policy_delay")
-            model_target_policy_noise = rospy.get_param(ns + "/model_params/td3_params/target_policy_noise")
-            model_target_noise_clip = rospy.get_param(ns + "/model_params/td3_params/target_noise_clip")
+            model_learning_rate = parm_dict["td3_params"]["learning_rate"]
+            model_buffer_size = parm_dict["td3_params"]["buffer_size"]
+            model_learning_starts = parm_dict["td3_params"]["learning_starts"]
+            model_batch_size = parm_dict["td3_params"]["batch_size"]
+            model_tau = parm_dict["td3_params"]["tau"]
+            model_gamma = parm_dict["td3_params"]["gamma"]
+            model_gradient_steps = parm_dict["td3_params"]["gradient_steps"]
+            model_train_freq_freq = parm_dict["td3_params"]["train_freq"]["freq"]
+            model_train_freq_unit = parm_dict["td3_params"]["train_freq"]["unit"]
+            model_policy_delay = parm_dict["td3_params"]["policy_delay"]
+            model_target_policy_noise = parm_dict["td3_params"]["target_policy_noise"]
+            model_target_noise_clip = parm_dict["td3_params"]["target_noise_clip"]
 
             # --- Create or load model
-            if rospy.get_param(ns + "/model_params/load_model"):  # Load model
-                model_name = rospy.get_param(ns + "/model_params/model_name")
+            if parm_dict["load_model"]:  # Load model
+                model_name = parm_dict["model_name"]
+
                 assert os.path.exists(save_model_path + model_name + ".zip"), "Model {} doesn't exist".format(
                     model_name)
                 rospy.logwarn("Loading model: " + model_name)
+
                 self.model = stable_baselines3.TD3.load(save_model_path + model_name, env=env, verbose=1,
                                                         action_noise=self.action_noise,
                                                         learning_rate=model_learning_rate,
@@ -81,6 +110,7 @@ class TD3(basic_model.BasicModel):
                                                         target_policy_noise=model_target_policy_noise,
                                                         target_noise_clip=model_target_noise_clip,
                                                         train_freq=(model_train_freq_freq, model_train_freq_unit))
+
                 if os.path.exists(save_model_path + model_name + "_replay_buffer.pkl"):
                     rospy.logwarn("Loading replay buffer")
                     self.model.load_replay_buffer(save_model_path + model_name + "_replay_buffer")
@@ -89,6 +119,7 @@ class TD3(basic_model.BasicModel):
 
             else:  # Create new model
                 rospy.logwarn("Creating new model")
+
                 self.model = stable_baselines3.TD3("MlpPolicy", env, verbose=1, action_noise=self.action_noise,
                                                    learning_rate=model_learning_rate, buffer_size=model_buffer_size,
                                                    learning_starts=model_learning_starts,
@@ -102,19 +133,20 @@ class TD3(basic_model.BasicModel):
             # --- Logger
             self.set_model_logger()
 
-    def load_trained(model_path, env=None):
-        """
-        Load a trained model. Use only with predict function, as the logs will not be saved.
 
-        :param model_path: The path to the trained model.
-        :type model_path: str
-        :param env: The environment to be used.
-        :type env: gym.Env
+def load_trained_model(model_path, model_pkg_path=None, env=None):
+    """
+    Load a trained model. Use only with predict function, as the logs will not be saved.
 
-        :return: The loaded model.
-        :rtype: frobs_rl.TD3
-        """
+    Args:
+        model_path (str): The path to the trained model.
+        model_pkg_path (str): The package name to load the model.
+        env (gym.Env): The environment to be used.
+    Returns:
+        model: The loaded model.
+    """
 
-        model = TD3(env=env, save_model_path=model_path, log_path=model_path, load_trained=True)
+    model = TD3(env=env, save_model_path=model_path, log_path=model_path, load_model_path=model_path,
+                model_pkg_path=model_pkg_path, load_trained=True)
 
-        return model
+    return model
