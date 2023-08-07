@@ -115,8 +115,8 @@ if __name__ == '__main__':
     env_base = gym.make('RX200ReacherEnvSim-v0', gazebo_gui=False)
    
     # goal conditioned environments
-    env_goal = gym.make('RX200ReacherGoalEnvSim-v0', gazebo_gui=True, ee_action_type=False, delta_action=False, 
-                   reward_type="sparse")
+    env_goal = gym.make('RX200ReacherGoalEnvSim-v0', gazebo_gui=True, ee_action_type=False, 
+                        delta_action=False, reward_type="sparse")
    
     # reset the environments
     env_base.reset()
@@ -130,16 +130,16 @@ if __name__ == '__main__':
     log_path = "/logs/sac/"
     
     # normal environments
-    model_base = SAC(env_base, save_path, log_path, model_pkg_path=pkg_path, config_file_pkg=pkg_path, 
-                     config_filename=config_file_name_base)
+    model_base = SAC(env_base, save_path, log_path, model_pkg_path=pkg_path, 
+                     config_file_pkg=pkg_path, config_filename=config_file_name_base)
     
     # train the models
     model_base.train()
     model_base.save_model()
     
     # goal conditioned environments
-    model_goal = SAC_GOAL(env_goal, save_path, log_path, model_pkg_path=pkg_path, config_file_pkg=pkg_path, 
-                          config_filename=config_file_name_goal)
+    model_goal = SAC_GOAL(env_goal, save_path, log_path, model_pkg_path=pkg_path, 
+                          config_file_pkg=pkg_path, config_filename=config_file_name_goal)
     
     # train the models
     model_goal.train()
@@ -164,7 +164,8 @@ if __name__ == '__main__':
     env_goal.close()
     
     # if you want to load saved models and validate results, you can use the following code
-    model = SAC.load_trained_model(save_path + "trained_model_name_without_.zip", model_pkg_path= pkg_path)
+    model = SAC.load_trained_model(save_path + "trained_model_name_without_.zip", 
+                                   model_pkg_path= pkg_path)
     # then you can follow the same validation procedure as above
 ```
 **Note**: please note that the examples are provided for reference only. You may need to modify the code to suit your specific needs.
