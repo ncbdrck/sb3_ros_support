@@ -4,7 +4,7 @@
 
 This is an extension of the [SB3](https://stable-baselines3.readthedocs.io/en/master/) package that provides ROS support for Stable Baselines3. It allows you to train robotics RL agents in the real world and simulations using ROS.
 
-This package extends the functionality of SB3 models in [frobs_rl](https://github.com/jmfajardod/frobs_rl) package to provides the following features:
+This package extends the functionality of SB3 models in [FRobs_RL](https://github.com/jmfajardod/frobs_rl) package to provides the following features:
  1. Support for goal conditioned RL tasks
  2. HER (Hindsight Experience Replay) for goal conditioned RL tasks
  3. Support for training concurrent environments
@@ -178,7 +178,7 @@ This package is released under the [MIT License](https://opensource.org/licenses
 
 We would like to thank the following projects and communities for their valuable contributions, as well as the authors of relevant libraries and tools used in this package.
 - [ROS (Robot Operating System)](https://www.ros.org/)
-- [frobs_rl](https://frobs-rl.readthedocs.io/en/latest/)
+- [FRobs_RL](https://frobs-rl.readthedocs.io/en/latest/)
 - [Stable Baselines3](https://stable-baselines3.readthedocs.io/en/master/)
 - [OpenAI Gym](https://gym.openai.com/)
 
