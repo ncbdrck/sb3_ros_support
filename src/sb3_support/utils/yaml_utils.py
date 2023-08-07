@@ -55,6 +55,6 @@ def load_yaml(pkg_name=None, file_name=None, file_abs_path=None) -> dict:
             return yaml_dict
         except yaml.YAMLError as exc:
             print(exc)
-            return dict([])
+            raise yaml.YAMLError(exc)
 
 
