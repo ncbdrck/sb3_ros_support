@@ -116,7 +116,7 @@ def get_action_noise(action_space_shape, parm_dict: dict, action_noise_type="nor
             action_dt = parm_dict["action_noise"]["dt"]
 
             # initial noise
-            if parm_dict["action_noise"]["initial_noise"] is None:
+            if parm_dict["action_noise"]["initial_noise"] is not None:
                 action_initial_noise = parm_dict["action_noise"]["initial_noise"]
             else:
                 action_initial_noise = None
