@@ -35,40 +35,71 @@ class DQN(core.BasicModel):
         rospy.loginfo("Init DQN Policy")
         print("Init DQN Policy")
 
+        # --- Set the environment
         self.env = env
 
+        # --- Set the save and log path
+        if model_pkg_path is not None:
+            rospack = rospkg.RosPack()
+            pkg_path = rospack.get_path(model_pkg_path)
+
+            # check if the path starts with "/"
+            if save_model_path[0] != "/":
+                save_model_path = "/" + save_model_path
+            if log_path[0] != "/":
+                log_path = "/" + log_path
+
+            # check if the path ends with "/"
+            if save_model_path[-1] != "/":
+                save_model_path = save_model_path + "/"
+            if log_path[-1] != "/":
+                log_path = log_path + "/"
+
+            save_model_path = pkg_path + save_model_path
+            log_path = pkg_path + log_path
+
+            if load_trained:
+                # check if the path starts with "/"
+                if load_model_path[0] != "/":
+                    load_model_path = "/" + load_model_path
+
+                load_model_path = pkg_path + load_model_path
+
         # Load YAML Config File
-        ros_params.ros_load_yaml_from_pkg(config_file_pkg, config_filename, ns=ns)
+        parm_dict = yaml_utils.load_yaml(pkg_name=config_file_pkg, file_name=config_filename,
+                                         file_abs_path=abs_config_path)
 
         # --- Init super class
-        super(DQN, self).__init__(env, save_model_path, log_path, load_trained=load_trained)
+        super().__init__(env, save_model_path, log_path, parm_dict, load_trained=load_trained)
 
         if load_trained:
             rospy.logwarn("Loading trained model")
-            self.model = stable_baselines3.DQN.load(save_model_path, env=env)
+            self.model = stable_baselines3.DQN.load(load_model_path, env=env)
         else:
             # --- DQN model parameters
-            model_learning_rate = rospy.get_param(ns + "/model_params/dqn_params/learning_rate")
-            model_buffer_size = rospy.get_param(ns + "/model_params/dqn_params/buffer_size")
-            model_learning_starts = rospy.get_param(ns + "/model_params/dqn_params/learning_starts")
-            model_batch_size = rospy.get_param(ns + "/model_params/dqn_params/batch_size")
-            model_tau = rospy.get_param(ns + "/model_params/dqn_params/tau")
-            model_gamma = rospy.get_param(ns + "/model_params/dqn_params/gamma")
-            model_gradient_steps = rospy.get_param(ns + "/model_params/dqn_params/gradient_steps")
-            model_train_freq_freq = rospy.get_param(ns + "/model_params/dqn_params/train_freq/freq")
-            model_train_freq_unit = rospy.get_param(ns + "/model_params/dqn_params/train_freq/unit")
-            model_target_update_interval = rospy.get_param(ns + "/model_params/dqn_params/target_update_interval")
-            model_exploration_fraction = rospy.get_param(ns + "/model_params/dqn_params/exploration_fraction")
-            model_exploration_initial_eps = rospy.get_param(ns + "/model_params/dqn_params/exploration_initial_eps")
-            model_exploration_final_eps = rospy.get_param(ns + "/model_params/dqn_params/exploration_final_eps")
-            model_max_grad_norm = rospy.get_param(ns + "/model_params/dqn_params/max_grad_norm")
+            model_learning_rate = parm_dict["dqn_params"]["learning_rate"]
+            model_buffer_size = parm_dict["dqn_params"]["buffer_size"]
+            model_learning_starts = parm_dict["dqn_params"]["learning_starts"]
+            model_batch_size = parm_dict["dqn_params"]["batch_size"]
+            model_tau = parm_dict["dqn_params"]["tau"]
+            model_gamma = parm_dict["dqn_params"]["gamma"]
+            model_gradient_steps = parm_dict["dqn_params"]["gradient_steps"]
+            model_train_freq_freq = parm_dict["dqn_params"]["train_freq"]["freq"]
+            model_train_freq_unit = parm_dict["dqn_params"]["train_freq"]["unit"]
+            model_target_update_interval = parm_dict["dqn_params"]["target_update_interval"]
+            model_exploration_fraction = parm_dict["dqn_params"]["exploration_fraction"]
+            model_exploration_initial_eps = parm_dict["dqn_params"]["exploration_initial_eps"]
+            model_exploration_final_eps = parm_dict["dqn_params"]["exploration_final_eps"]
+            model_max_grad_norm = parm_dict["dqn_params"]["max_grad_norm"]
 
             # --- Create or load model
-            if rospy.get_param(ns + "/model_params/load_model"):  # Load model
-                model_name = rospy.get_param(ns + "/model_params/model_name")
+            if parm_dict["load_model"]:  # Load model
+                model_name = parm_dict["model_name"]
+
                 assert os.path.exists(save_model_path + model_name + ".zip"), "Model {} doesn't exist".format(
                     model_name)
                 rospy.logwarn("Loading model: " + model_name)
+
                 self.model = stable_baselines3.DQN.load(save_model_path + model_name, env=env, verbose=1,
                                                         learning_rate=model_learning_rate,
                                                         buffer_size=model_buffer_size,
@@ -107,19 +138,20 @@ class DQN(core.BasicModel):
             # --- Logger
             self.set_model_logger()
 
-    def load_trained(model_path, env=None):
-        """
-        Load a trained model. Use only with predict function, as the logs will not be saved.
 
-        :param model_path: The path to the trained model.
-        :type model_path: str
-        :param env: The environment to be used.
-        :type env: gym.Env
+def load_trained_model(model_path, model_pkg_path=None, env=None):
+    """
+    Load a trained model. Use only with predict function, as the logs will not be saved.
 
-        :return: The trained model.
-        :rtype: frobs_rl.DQN
-        """
+    Args:
+        model_path (str): The path to the trained model.
+        model_pkg_path (str): The package name to load the model.
+        env (gym.Env): The environment to be used.
+    Returns:
+        model: The loaded model.
+    """
 
-        model = DQN(env=env, save_model_path=model_path, log_path=model_path, load_trained=True)
+    model = DQN(env=env, save_model_path=model_path, log_path=model_path, load_model_path=model_path,
+                model_pkg_path=model_pkg_path, load_trained=True)
 
-        return model
+    return model
