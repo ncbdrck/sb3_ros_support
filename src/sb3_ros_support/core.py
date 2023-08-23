@@ -4,12 +4,12 @@ Extending the SB3 models of the frobs_rl library.
 
 Recreated to overcome the following errors:
     - Cannot use with multiple environments
-    - Support for goal conditioned environments
+    - Support for goal-conditioned environments
     - pyyaml for loading parameters
 """
 import os
 from datetime import datetime
-from sb3_ros_support.utils.sb3_common import get_policy_kwargs, get_action_noise, test_env
+from sb3_ros_support.utils.sb3_common import get_policy_kwargs, get_action_noise, test_env, TimeLimitCallback
 
 # ROS packages required
 import rospy
@@ -58,10 +58,13 @@ class BasicModel:
             self.checkpoint_callback = CheckpointCallback(save_freq=save_freq, save_path=save_model_path,
                                                           name_prefix=save_prefix)
 
-    def train(self) -> bool:
+    def train(self, action_cycle_time=None) -> bool:
         """
         Function to train the model the number of steps specified in the yaml config file.
         The function will automatically save the model after training.
+
+        Args:
+            action_cycle_time (float): The time to wait between actions. (Optional)
 
         Returns:
             bool: True if the model was trained, False otherwise.
@@ -74,7 +77,15 @@ class BasicModel:
             self.env = self.model.get_env()
             self.env.reset()
 
-        self.model.learn(total_timesteps=int(training_steps), callback=self.checkpoint_callback,
+        # Create the list of callbacks
+        callbacks = [self.checkpoint_callback]
+
+        if action_cycle_time is not None:
+            # Create the callback
+            time_limit_callback = TimeLimitCallback(action_cycle_time=action_cycle_time)
+            callbacks.append(time_limit_callback)
+
+        self.model.learn(total_timesteps=int(training_steps), callback=callbacks,
                          log_interval=learn_log_int, reset_num_timesteps=learn_reset_num_tm)
 
         self.save_model()
