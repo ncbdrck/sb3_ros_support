@@ -11,6 +11,10 @@ import rospy
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 from stable_baselines3.common.env_checker import check_env
 
+# Callbacks
+from stable_baselines3.common.callbacks import BaseCallback
+import time
+
 
 def get_policy_kwargs(parm_dict: dict) -> dict:
     """
@@ -136,3 +140,26 @@ def test_env(env):
     """
     check_env(env)
     return True
+
+
+class TimeLimitCallback(BaseCallback):
+    """
+    Callback for setting an action cycle for training.
+    """
+
+    def __init__(self, action_cycle_time, verbose=0):
+        """
+        Args:
+            action_cycle_time (float): The time in seconds for the action cycle.
+            verbose (int): The verbosity level: 0 none, 1 training information, 2 debug.
+        """
+        super(TimeLimitCallback, self).__init__(verbose)
+        self.action_cycle_time = action_cycle_time
+        self.next_action_cycle = time.time() + action_cycle_time
+
+    def _on_step(self) -> bool:
+        # Wait until it's time for the next action cycle
+        wait_time = max(0, self.next_action_cycle - time.time())
+        time.sleep(wait_time)
+        self.next_action_cycle = time.time() + self.action_cycle_time
+        return True
