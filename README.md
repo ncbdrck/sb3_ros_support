@@ -155,21 +155,6 @@ We would like to thank the following projects and communities for their valuable
 - [Stable Baselines3](https://stable-baselines3.readthedocs.io/en/master/)
 - [OpenAI Gym](https://gym.openai.com/)
 
-## Cite
-
-If you use this package in your research or work and would like to cite it, you can use the following citation:
-
-Repository
-```bibtex
-@misc{sb3_ros_support,
-  author = {Kapukotuwa, Jayasekara},
-  booktitle = {GitHub repository},
-  publisher = {GitHub},
-  title = {SB3 ROS Support: The ROS Support Package for Stable Baselines3},
-  url = {https://github.com/ncbdrck/sb3_ros_support},
-  year = {2023}
-}
-```
 
 ## Contact
 
