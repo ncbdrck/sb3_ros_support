@@ -71,7 +71,7 @@ class SAC_GOAL(core.BasicModel):
         parm_dict = yaml_utils.load_yaml(pkg_name=config_file_pkg, file_name=config_filename,
                                          file_abs_path=abs_config_path)
 
-        # --- Init super class
+        # --- Init superclass
         super().__init__(env, save_model_path, log_path, parm_dict, load_trained=load_trained)
 
         if load_trained:
@@ -179,7 +179,7 @@ class SAC_GOAL(core.BasicModel):
                 else:
                     rospy.logwarn("No replay buffer found")
 
-            else:  # Create new model
+            else:  # Create a new model
                 rospy.logwarn("Creating new model")
 
                 if use_her or parm_dict["use_HER"]:
@@ -242,20 +242,34 @@ class SAC_GOAL(core.BasicModel):
             # --- Logger
             self.set_model_logger()
 
-
-    def load_trained_model(model_path, model_pkg_path=None, env=None):
+    @staticmethod
+    def load_trained_model(model_path, model_pkg=None, env=None, config_file_pkg=None, config_filename=None,
+                           abs_config_path=None):
         """
         Load a trained model. Use only with predict function, as the logs will not be saved.
 
         Args:
-            model_path (str): The path to the trained model.
-            model_pkg_path (str): The package name to load the model.
+            model_path (str): The path to the trained model. Can be absolute or relative.
+            model_pkg (str): The package name to load the model. Required if abs_model_path is relative.
             env (gym.Env): The environment to be used.
+            config_file_pkg (str): The package name of the config file. Use the same package as model_pkg if not provided.
+            config_filename (str): The name of the config file.
+            abs_config_path (str): The absolute path to the config file.
         Returns:
             model: The loaded model.
         """
 
-        model = SAC_GOAL(env=env, save_model_path=model_path, log_path=model_path, load_model_path=model_path,
-                         model_pkg_path=model_pkg_path, load_trained=True)
+        if config_file_pkg is None and config_filename is None and abs_config_path is None:
+            config_file_pkg = "sb3_ros_support"
+            config_filename = "sac_goal.yaml"
+
+            rospy.logwarn("Using default config file: " + config_filename + " from package: " + config_file_pkg)
+
+        elif model_pkg is not None and config_filename is not None and config_file_pkg is None:
+            config_file_pkg = model_pkg
+
+        model = SAC_GOAL(env=env, save_model_path=model_path, log_path=model_path, model_pkg_path=model_pkg,
+                         load_trained=True, load_model_path=model_path, config_file_pkg=config_file_pkg,
+                         config_filename=config_filename, abs_config_path=abs_config_path)
 
         return model
