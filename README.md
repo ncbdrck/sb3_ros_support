@@ -4,7 +4,7 @@
 
 This package is an extension of the [SB3](https://stable-baselines3.readthedocs.io/en/master/) package that provides ROS support for Stable Baselines3. It allows you to train robotics RL agents in the real world and simulations using ROS.
 
-This package extends the functionality of SB3 models in [FRobs_RL](https://github.com/jmfajardod/frobs_rl) package to provides the following features:
+This package extends the functionality of SB3 models in [FRobs_RL](https://github.com/jmfajardod/frobs_rl) package to provide the following features:
  1. Support for goal-conditioned RL tasks
  2. HER (Hindsight Experience Replay) for goal-conditioned RL tasks
  3. Support for training custom environments with [ROS_RL](https://github.com/ncbdrck/ros_rl) or [MultiROS](https://github.com/ncbdrck/multiros) frameworks
@@ -58,7 +58,7 @@ It also showcases:
 - How to use [ROS_RL](https://github.com/ncbdrck/ros_rl) to create a real-world environment for RL applications.
 - Train the Rx200 robot directly in the real world to perform a simple reach task.
 - Use [MultiROS](https://github.com/ncbdrck/multiros) framework to create a simulation environment for the same robot and train it in the simulation environment. Then transfer the learned policy to the real-world environment.
-- Train both environments (sim and real) in real-time to obtain a generalized policy that performs well in both environments.
+- Train both environments (sim and real) in real-time to obtain a generalised policy that performs well in both environments.
 
 The installation instructions for the examples are provided in the respective repositories.
 
@@ -138,14 +138,16 @@ if __name__ == '__main__':
     
     # if you want to load saved models and validate results, you can use the following code
     model = SAC.load_trained_model(save_path + "trained_model_name_without_.zip", 
-                                   model_pkg_path= pkg_path)
+                                   model_pkg= pkg_path,
+                                   env=env_goal,
+                                   config_filename=config_file_name_goal)
     # then you can follow the same validation procedure as above
 ```
 **Note**: Please note that the examples are provided for reference only. You may need to modify the code to suit your specific needs.
 
 ## License
 
-This package is released under the [MIT License](https://opensource.org/licenses/MIT). Please see the LICENSE file for more details.
+This package is released under the [MIT Licence](https://opensource.org/licenses/MIT). Please see the LICENCE file for more details.
 
 ## Acknowledgements
 
