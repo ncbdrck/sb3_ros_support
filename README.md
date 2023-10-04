@@ -86,7 +86,9 @@ if __name__ == '__main__':
    
     # normal environments
     env_base = gym.make('RX200ReacherEnvSim-v0', gazebo_gui=False)
-   
+
+    # or you can use
+
     # goal-conditioned environments
     env_goal = gym.make('RX200ReacherGoalEnvSim-v0', gazebo_gui=True, ee_action_type=False, 
                         delta_action=False, reward_type="sparse")
@@ -101,23 +103,26 @@ if __name__ == '__main__':
     config_file_name_goal = "sac_goal.yaml"
     save_path = "/models/sac/"
     log_path = "/logs/sac/"
-    
-    # normal environments
+
+    # --------------------------------------------------------------------------------------------
+    # Creating a model - normal environments
     model_base = SAC(env_base, save_path, log_path, model_pkg_path=pkg_path, 
                      config_file_pkg=pkg_path, config_filename=config_file_name_base)
     
     # train the models
     model_base.train()
     model_base.save_model()
-    
-    # goal-conditioned environments
+
+    # --------------------------------------------------------------------------------------------
+    # Creating a model - goal-conditioned environments
     model_goal = SAC_GOAL(env_goal, save_path, log_path, model_pkg_path=pkg_path, 
                           config_file_pkg=pkg_path, config_filename=config_file_name_goal)
     
     # train the models
     model_goal.train()
     model_goal.save_model()
-    
+
+    # --------------------------------------------------------------------------------------------
     # validate the models
     obs = env_base.reset()
     episodes = 1000
@@ -132,16 +137,16 @@ if __name__ == '__main__':
 
     env_base.close()
     
-    # we can also use the goal-conditioned model to validate the normal environment
+    # We can also use the goal-conditioned model to validate the normal environment
     # Just follow the same procedure as above. Not shown here.
     env_goal.close()
     
-    # if you want to load saved models and validate results, you can use the following code
+    # If you want to load saved models and validate results, you can use the following code
     model = SAC.load_trained_model(save_path + "trained_model_name_without_.zip", 
                                    model_pkg= pkg_path,
                                    env=env_goal,
                                    config_filename=config_file_name_goal)
-    # then you can follow the same validation procedure as above
+    # Then you can follow the same validation procedure as above
 ```
 **Note**: Please note that the examples are provided for reference only. You may need to modify the code to suit your specific needs.
 
