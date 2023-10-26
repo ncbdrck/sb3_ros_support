@@ -27,7 +27,7 @@ class BasicModel:
     """
 
     def __init__(self, env, save_model_path, log_path, parm_dict, load_trained=False,
-                 action_noise_type="normal") -> None:
+                 action_noise_type="normal", action_noise=True) -> None:
         """
         Args:
             env (gym.Env): The environment to be used.
@@ -36,6 +36,7 @@ class BasicModel:
             log_path (str): The path to save the log.
             load_trained (bool): Whether to load a trained model or not.
             action_noise_type (str): The type of action noise to use. Can be "normal" or "ornstein". (Optional)
+            action_noise (bool): Whether to use action noise or not. (Optional)
         """
 
         self.env = env
@@ -50,7 +51,8 @@ class BasicModel:
             self.policy_kwargs = get_policy_kwargs(parm_dict)
 
             # --- Noise kwargs
-            self.action_noise = get_action_noise(self.env.action_space.shape[-1], parm_dict, action_noise_type)
+            if action_noise:
+                self.action_noise = get_action_noise(self.env.action_space.shape[-1], parm_dict, action_noise_type)
 
             # --- Callback
             save_freq = parm_dict["save_freq"]
