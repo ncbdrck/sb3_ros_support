@@ -96,6 +96,7 @@ class A2C(core.BasicModel):
             model_use_rms_prop = parm_dict["a2c_params"]["use_rms_prop"]
             model_rms_prop_eps = parm_dict["a2c_params"]["rms_prop_eps"]
             model_norm_advant = parm_dict["a2c_params"]["normalize_advantage"]
+            model_seed = parm_dict["a2c_params"]["seed"]
 
             # --- Create or load model
             if parm_dict["load_model"]:  # Load model
@@ -113,7 +114,8 @@ class A2C(core.BasicModel):
                                                         use_sde=model_sde, sde_sample_freq=model_sde_sample_freq,
                                                         use_rms_prop=model_use_rms_prop,
                                                         rms_prop_eps=model_rms_prop_eps,
-                                                        normalize_advantage=model_norm_advant)
+                                                        normalize_advantage=model_norm_advant,
+                                                        seed=model_seed)
 
                 if os.path.exists(save_model_path + model_name + "_replay_buffer.pkl"):
                     rospy.logwarn("Loading replay buffer")
@@ -130,7 +132,8 @@ class A2C(core.BasicModel):
                                                    vf_coef=model_vf_coef, max_grad_norm=model_max_grad_norm,
                                                    use_sde=model_sde, sde_sample_freq=model_sde_sample_freq,
                                                    use_rms_prop=model_use_rms_prop, rms_prop_eps=model_rms_prop_eps,
-                                                   normalize_advantage=model_norm_advant)
+                                                   normalize_advantage=model_norm_advant,
+                                                   seed=model_seed)
 
             # --- Logger
             self.set_model_logger()

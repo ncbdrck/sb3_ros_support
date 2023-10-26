@@ -100,6 +100,7 @@ class SAC(core.BasicModel):
             model_target_entropy = parm_dict["sac_params"]["target_entropy"]
             model_train_freq_freq = parm_dict["sac_params"]["train_freq"]["freq"]
             model_train_freq_unit = parm_dict["sac_params"]["train_freq"]["unit"]
+            model_seed = parm_dict["sac_params"]["seed"]
 
             # --- Create or load model
             if parm_dict["load_model"]:  # Load model
@@ -121,7 +122,8 @@ class SAC(core.BasicModel):
                                                         ent_coef=model_ent_coef,
                                                         target_update_interval=model_target_update_interval,
                                                         target_entropy=model_target_entropy,
-                                                        train_freq=(model_train_freq_freq, model_train_freq_unit))
+                                                        train_freq=(model_train_freq_freq, model_train_freq_unit),
+                                                        seed=model_seed)
 
                 if os.path.exists(save_model_path + model_name + "_replay_buffer.pkl"):
                     rospy.logwarn("Loading replay buffer")
@@ -142,7 +144,8 @@ class SAC(core.BasicModel):
                                                    policy_kwargs=self.policy_kwargs, ent_coef=model_ent_coef,
                                                    target_update_interval=model_target_update_interval,
                                                    target_entropy=model_target_entropy,
-                                                   train_freq=(model_train_freq_freq, model_train_freq_unit))
+                                                   train_freq=(model_train_freq_freq, model_train_freq_unit),
+                                                   seed=model_seed)
 
             # --- Logger
             self.set_model_logger()

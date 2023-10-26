@@ -53,4 +53,4 @@
     train_freq:
       freq: 20
       unit: step # episode or step
-
+    seed: 0

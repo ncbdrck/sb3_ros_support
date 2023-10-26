@@ -91,6 +91,7 @@ class DQN(core.BasicModel):
             model_exploration_initial_eps = parm_dict["dqn_params"]["exploration_initial_eps"]
             model_exploration_final_eps = parm_dict["dqn_params"]["exploration_final_eps"]
             model_max_grad_norm = parm_dict["dqn_params"]["max_grad_norm"]
+            model_seed = parm_dict["dqn_params"]["seed"]
 
             # --- Create or load model
             if parm_dict["load_model"]:  # Load model
@@ -112,7 +113,8 @@ class DQN(core.BasicModel):
                                                         exploration_initial_eps=model_exploration_initial_eps,
                                                         exploration_final_eps=model_exploration_final_eps,
                                                         max_grad_norm=model_max_grad_norm,
-                                                        train_freq=(model_train_freq_freq, model_train_freq_unit))
+                                                        train_freq=(model_train_freq_freq, model_train_freq_unit),
+                                                        seed=model_seed)
 
                 if os.path.exists(save_model_path + model_name + "_replay_buffer.pkl"):
                     rospy.logwarn("Loading replay buffer")
@@ -133,7 +135,8 @@ class DQN(core.BasicModel):
                                                    exploration_initial_eps=model_exploration_initial_eps,
                                                    exploration_final_eps=model_exploration_final_eps,
                                                    max_grad_norm=model_max_grad_norm, policy_kwargs=self.policy_kwargs,
-                                                   train_freq=(model_train_freq_freq, model_train_freq_unit))
+                                                   train_freq=(model_train_freq_freq, model_train_freq_unit),
+                                                   seed=model_seed)
 
             # --- Logger
             self.set_model_logger()

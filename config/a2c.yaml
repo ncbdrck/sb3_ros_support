@@ -44,3 +44,4 @@
     use_rms_prop: True
     rms_prop_eps: 0.00001
     normalize_advantage: False
+    seed: 0

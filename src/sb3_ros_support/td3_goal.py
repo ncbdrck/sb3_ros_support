@@ -92,6 +92,7 @@ class TD3_GOAL(core.BasicModel):
             model_policy_delay = parm_dict["td3_params"]["policy_delay"]
             model_target_policy_noise = parm_dict["td3_params"]["target_policy_noise"]
             model_target_noise_clip = parm_dict["td3_params"]["target_noise_clip"]
+            model_seed = parm_dict["td3_params"]["seed"]
 
             # --- Create or load model
             if parm_dict["load_model"]:  # Load model
@@ -141,7 +142,9 @@ class TD3_GOAL(core.BasicModel):
                                                                 n_sampled_goal=n_sampled_goal,
                                                                 goal_selection_strategy=goal_selection_strategy,
                                                                 max_episode_length=max_episode_length,
-                                                                online_sampling=online_sampling, )
+                                                                online_sampling=online_sampling, ),
+
+                                                            seed=model_seed
                                                             )
 
                 else:
@@ -157,7 +160,8 @@ class TD3_GOAL(core.BasicModel):
                                                             policy_delay=model_policy_delay,
                                                             target_policy_noise=model_target_policy_noise,
                                                             target_noise_clip=model_target_noise_clip,
-                                                            train_freq=(model_train_freq_freq, model_train_freq_unit))
+                                                            train_freq=(model_train_freq_freq, model_train_freq_unit),
+                                                            seed=model_seed)
 
                 if os.path.exists(save_model_path + model_name + "_replay_buffer.pkl"):
                     rospy.logwarn("Loading replay buffer")
@@ -207,7 +211,9 @@ class TD3_GOAL(core.BasicModel):
                                                            n_sampled_goal=n_sampled_goal,
                                                            goal_selection_strategy=goal_selection_strategy,
                                                            max_episode_length=max_episode_length,
-                                                           online_sampling=online_sampling, )
+                                                           online_sampling=online_sampling, ),
+
+                                                       seed=model_seed
                                                        )
 
                 else:
@@ -222,7 +228,8 @@ class TD3_GOAL(core.BasicModel):
                                                        policy_delay=model_policy_delay,
                                                        target_policy_noise=model_target_policy_noise,
                                                        target_noise_clip=model_target_noise_clip,
-                                                       train_freq=(model_train_freq_freq, model_train_freq_unit))
+                                                       train_freq=(model_train_freq_freq, model_train_freq_unit),
+                                                       seed=model_seed)
 
             # --- Logger
             self.set_model_logger()

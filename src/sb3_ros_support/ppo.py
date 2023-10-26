@@ -96,6 +96,7 @@ class PPO(core.BasicModel):
             model_ent_coef = parm_dict["ppo_params"]["ent_coef"]
             model_vf_coef = parm_dict["ppo_params"]["vf_coef"]
             model_max_grad_norm = parm_dict["ppo_params"]["max_grad_norm"]
+            model_seed = parm_dict["ppo_params"]["seed"]
 
             # --- Create or load model
             if parm_dict["load_model"]:  # Load model
@@ -112,7 +113,8 @@ class PPO(core.BasicModel):
                                                         n_epochs=model_n_epochs, gamma=model_gamma,
                                                         gae_lambda=model_gae_lambda, clip_range=model_clip_range,
                                                         ent_coef=model_ent_coef,
-                                                        vf_coef=model_vf_coef, max_grad_norm=model_max_grad_norm)
+                                                        vf_coef=model_vf_coef, max_grad_norm=model_max_grad_norm,
+                                                        seed=model_seed)
 
                 if os.path.exists(save_model_path + model_name + "_replay_buffer.pkl"):
                     rospy.logwarn("Loading replay buffer")
@@ -130,7 +132,8 @@ class PPO(core.BasicModel):
                                                    gae_lambda=model_gae_lambda, clip_range=model_clip_range,
                                                    ent_coef=model_ent_coef,
                                                    policy_kwargs=self.policy_kwargs, vf_coef=model_vf_coef,
-                                                   max_grad_norm=model_max_grad_norm)
+                                                   max_grad_norm=model_max_grad_norm,
+                                                   seed=model_seed)
 
             # --- Logger
             self.set_model_logger()

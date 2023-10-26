@@ -89,6 +89,7 @@ class DDPG_GOAL(core.BasicModel):
             model_gradient_steps = parm_dict["ddpg_params"]["gradient_steps"]
             model_train_freq_freq = parm_dict["ddpg_params"]["train_freq"]["freq"]
             model_train_freq_unit = parm_dict["ddpg_params"]["train_freq"]["unit"]
+            model_seed = parm_dict["ddpg_params"]["seed"]
 
             # --- Create or load model
             if parm_dict["load_model"]:  # Load model
@@ -135,7 +136,9 @@ class DDPG_GOAL(core.BasicModel):
                                                                  n_sampled_goal=n_sampled_goal,
                                                                  goal_selection_strategy=goal_selection_strategy,
                                                                  max_episode_length=max_episode_length,
-                                                                 online_sampling=online_sampling, )
+                                                                 online_sampling=online_sampling, ),
+
+                                                             seed=model_seed
                                                              )
 
                 else:
@@ -147,7 +150,8 @@ class DDPG_GOAL(core.BasicModel):
                                                              batch_size=model_batch_size, tau=model_tau,
                                                              gamma=model_gamma,
                                                              gradient_steps=model_gradient_steps,
-                                                             train_freq=(model_train_freq_freq, model_train_freq_unit))
+                                                             train_freq=(model_train_freq_freq, model_train_freq_unit),
+                                                             seed=model_seed)
 
                 if os.path.exists(save_model_path + model_name + "_replay_buffer.pkl"):
                     rospy.logwarn("Loading replay buffer")
@@ -196,7 +200,9 @@ class DDPG_GOAL(core.BasicModel):
                                                             n_sampled_goal=n_sampled_goal,
                                                             goal_selection_strategy=goal_selection_strategy,
                                                             max_episode_length=max_episode_length,
-                                                            online_sampling=online_sampling, )
+                                                            online_sampling=online_sampling, ),
+
+                                                        seed=model_seed
                                                         )
 
                 else:
@@ -209,7 +215,8 @@ class DDPG_GOAL(core.BasicModel):
                                                         batch_size=model_batch_size, tau=model_tau, gamma=model_gamma,
                                                         gradient_steps=model_gradient_steps,
                                                         policy_kwargs=self.policy_kwargs,
-                                                        train_freq=(model_train_freq_freq, model_train_freq_unit))
+                                                        train_freq=(model_train_freq_freq, model_train_freq_unit),
+                                                        seed=model_seed)
 
             # --- Logger
             self.set_model_logger()
