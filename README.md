@@ -7,7 +7,7 @@ This package is an extension of the [SB3](https://stable-baselines3.readthedocs.
 This package extends the functionality of SB3 models in [FRobs_RL](https://github.com/jmfajardod/frobs_rl) package to provide the following features:
  1. Support for goal-conditioned RL tasks
  2. HER (Hindsight Experience Replay) for goal-conditioned RL tasks
- 3. Support for training custom environments with [ROS_RL](https://github.com/ncbdrck/ros_rl) or [MultiROS](https://github.com/ncbdrck/multiros) frameworks
+ 3. Support for training custom environments with [RealROS](https://github.com/ncbdrck/realros) or [MultiROS](https://github.com/ncbdrck/multiros) frameworks
 
 ## Prerequisites
 
@@ -55,7 +55,7 @@ To get started, follow these steps:
 you can refer to the [examples](https://github.com/ncbdrck/reactorx200_ros_reacher) to see how to use this package to train robots using ROS and Stable Baselines3.
 
 It also showcases:
-- How to use [ROS_RL](https://github.com/ncbdrck/ros_rl) to create a real-world environment for RL applications.
+- How to use [RealROS](https://github.com/ncbdrck/realros) to create a real-world environment for RL applications.
 - Train the Rx200 robot directly in the real world to perform a simple reach task.
 - Use [MultiROS](https://github.com/ncbdrck/multiros) framework to create a simulation environment for the same robot and train it in the simulation environment. Then transfer the learned policy to the real-world environment.
 - Train both environments (sim and real) in real-time to obtain a generalised policy that performs well in both environments.
