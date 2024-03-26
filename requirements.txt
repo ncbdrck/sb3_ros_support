@@ -18,6 +18,7 @@ pyyaml
 
 # other dependencies
 torch
-gym
+gymnasium
+gymnasium-robotics
 tensorboard
 
