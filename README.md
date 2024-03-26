@@ -8,6 +8,7 @@ This package extends the functionality of SB3 models in [FRobs_RL](https://githu
  1. Support for goal-conditioned RL tasks
  2. HER (Hindsight Experience Replay) for goal-conditioned RL tasks
  3. Support for training custom environments with [RealROS](https://github.com/ncbdrck/realros) or [MultiROS](https://github.com/ncbdrck/multiros) frameworks
+ 4. Updated for the new version of SB3 (Stable Baselines3) which uses **gymnasium** instead of **gym**.
 
 ## Prerequisites
 
