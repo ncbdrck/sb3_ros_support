@@ -6,7 +6,7 @@
 # stable-baselines3 for RL algorithms
 # 1.8.0 is the last version that supports gym.
 # Starting from 2.0.0, stable-baselines3 only suppoerts Gymnasium
-stable_baselines3<=1.8.0
+stable_baselines3
 # how to downgrade stable-baselines3
 # pip install stable-baselines3==1.8.0
 
@@ -17,7 +17,7 @@ numpy
 pyyaml
 
 # other dependencies
-torch>=1.8.1
-gym>=0.17.0, <= 0.21.0
-tensorboard>=2.2.0
+torch
+gym
+tensorboard
 
