@@ -29,7 +29,7 @@ To get started, follow these steps:
 1. Clone the repository:
     ```shell
     cd ~/catkin_ws/src
-    git clone https://github.com/ncbdrck/sb3_ros_support.git
+    git clone -b openai_gym https://github.com/ncbdrck/sb3_ros_support.git
     ```
 
 2. This package relies on several Python packages. You can install them by running the following command:
