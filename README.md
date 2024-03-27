@@ -53,7 +53,7 @@ To get started, follow these steps:
    
 ## Usage
 
-you can refer to the [examples](https://github.com/ncbdrck/reactorx200_ros_reacher) to see how to use this package to train robots using ROS and Stable Baselines3.
+you can refer to the [examples](https://github.com/ncbdrck/rl_environments) to see how to use this package to train robots using ROS and Stable Baselines3.
 
 It also showcases:
 - How to use [RealROS](https://github.com/ncbdrck/realros) to create a real-world environment for RL applications.
@@ -71,12 +71,12 @@ or you can follow the following example steps to train a robot using this packag
 import rospy
 
 # simulation or real-world environment framework
-from multiros.core import multiros_gym as gym
+import uniros as gym
 # or 
 # import gym
 
 # the custom ROS based environments (real or sim)
-import reactorx200_ros_reacher
+import rl_environments
 
 # Models
 from sb3_ros_support.sac import SAC
@@ -86,12 +86,12 @@ from sb3_ros_support.sac_goal import SAC_GOAL
 if __name__ == '__main__':
    
     # normal environments
-    env_base = gym.make('RX200ReacherEnvSim-v0', gazebo_gui=False)
+    env_base = gym.make('RX200ReacherSim-v0', gazebo_gui=False)
 
     # or you can use
 
     # goal-conditioned environments
-    env_goal = gym.make('RX200ReacherGoalEnvSim-v0', gazebo_gui=True, ee_action_type=False, 
+    env_goal = gym.make('RX200ReacherGoalSim-v0', gazebo_gui=True, ee_action_type=False, 
                         delta_action=False, reward_type="sparse")
    
     # reset the environments
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     env_goal.reset()
    
     # create the models
-    pkg_path = "reactorx200_ros_reacher"
+    pkg_path = "rl_environments"
     config_file_name_base = "sac.yaml"
     config_file_name_goal = "sac_goal.yaml"
     save_path = "/models/sac/"
@@ -130,8 +130,8 @@ if __name__ == '__main__':
     epi_count = 0
     while epi_count < episodes:
         action, _states = model_base.predict(observation=obs, deterministic=True)
-        obs, _, dones, info = env_base.step(action)
-        if dones:
+        obs, _, terminated,truncated, info = env_base.step(action)
+        if terminated or truncated:
             epi_count += 1
             rospy.logwarn("Episode: " + str(epi_count))
             obs = env_base.reset()
@@ -162,6 +162,7 @@ We would like to thank the following projects and communities for their valuable
 - [FRobs_RL](https://frobs-rl.readthedocs.io/en/latest/)
 - [Stable Baselines3](https://stable-baselines3.readthedocs.io/en/master/)
 - [OpenAI Gym](https://gym.openai.com/)
+- [Gymnasium](https://github.com/Farama-Foundation/Gymnasium)
 
 
 ## Contact
