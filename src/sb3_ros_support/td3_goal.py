@@ -141,8 +141,9 @@ class TD3_GOAL(core.BasicModel):
                                                             replay_buffer_kwargs=dict(
                                                                 n_sampled_goal=n_sampled_goal,
                                                                 goal_selection_strategy=goal_selection_strategy,
-                                                                max_episode_length=max_episode_length,
-                                                                online_sampling=online_sampling, ),
+                                                                #max_episode_length=max_episode_length,
+                                                                #online_sampling=online_sampling,
+                                                            ),
 
                                                             seed=model_seed
                                                             )
@@ -210,8 +211,9 @@ class TD3_GOAL(core.BasicModel):
                                                        replay_buffer_kwargs=dict(
                                                            n_sampled_goal=n_sampled_goal,
                                                            goal_selection_strategy=goal_selection_strategy,
-                                                           max_episode_length=max_episode_length,
-                                                           online_sampling=online_sampling, ),
+                                                           #max_episode_length=max_episode_length,
+                                                           #online_sampling=online_sampling,
+                                                       ),
 
                                                        seed=model_seed
                                                        )

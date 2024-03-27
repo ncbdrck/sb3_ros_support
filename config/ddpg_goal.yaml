@@ -38,8 +38,8 @@
   her_params:
     n_sampled_goal: 4
     goal_selection_strategy: future # future, final or episode
-    online_sampling: True
-    max_episode_length: 100
+    online_sampling: True  # not used in the new version of HER
+    max_episode_length: 100 # not used in the new version of HER
 
   # DDPG parameters
   ddpg_params:
