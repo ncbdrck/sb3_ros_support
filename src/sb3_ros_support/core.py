@@ -120,7 +120,7 @@ class BasicModel:
 
     def save_replay_buffer(self):
         """
-        Funtion to save the replay buffer, to be used the training must be finished or an error will be raised.
+        Function to save the replay buffer, to be used the training must be finished or an error will be raised.
 
         Returns:
             bool: True if the replay buffer was saved, False otherwise.
