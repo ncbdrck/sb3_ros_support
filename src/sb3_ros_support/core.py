@@ -53,6 +53,8 @@ class BasicModel:
             # --- Noise kwargs
             if action_noise:
                 self.action_noise = get_action_noise(self.env.action_space.shape[-1], parm_dict, action_noise_type)
+            else:
+                self.action_noise = None
 
             # --- Callback
             save_freq = parm_dict["save_freq"]

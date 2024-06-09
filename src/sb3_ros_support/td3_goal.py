@@ -71,8 +71,13 @@ class TD3_GOAL(core.BasicModel):
         parm_dict = yaml_utils.load_yaml(pkg_name=config_file_pkg, file_name=config_filename,
                                          file_abs_path=abs_config_path)
 
+        # get the action noise type
+        action_noise_type = parm_dict["action_noise_type"]
+        use_action_noise = parm_dict["use_action_noise"]
+
         # --- Init superclass
-        super().__init__(env, save_model_path, log_path, parm_dict, load_trained=load_trained)
+        super().__init__(env, save_model_path, log_path, parm_dict, load_trained=load_trained,
+                         action_noise_type=action_noise_type, action_noise=use_action_noise)
 
         if load_trained:
             rospy.logwarn("Loading trained model")

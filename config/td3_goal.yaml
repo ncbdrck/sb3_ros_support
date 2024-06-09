@@ -29,6 +29,7 @@
 
   # UseAction noise
   use_action_noise: True # For now only Gaussian noise is supported
+  action_noise_type: normal # normal or ornstein
   action_noise:
     mean: 0.0
     sigma: 0.01
