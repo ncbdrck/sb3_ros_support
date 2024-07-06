@@ -53,7 +53,7 @@ To get started, follow these steps:
    
 ## Usage
 
-you can refer to the [examples](https://github.com/ncbdrck/rl_environments) to see how to use this package to train robots using ROS and Stable Baselines3.
+you can refer to the [examples](https://github.com/ncbdrck/rl_training_validation) to see how to use this package to train robots using ROS and Stable Baselines3.
 
 It also showcases:
 - How to use [RealROS](https://github.com/ncbdrck/realros) to create a real-world environment for RL applications.
