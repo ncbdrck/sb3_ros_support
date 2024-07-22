@@ -11,7 +11,7 @@ stable_baselines3==2.2.1
 # pip install stable-baselines3==1.8.0
 
 # NumPy for numerical computations
-numpy
+numpy==1.23.3
 
 # pyyaml for loading YAML files
 pyyaml
