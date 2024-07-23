@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
     env_base.close()
     
-    # We can also use the goal-conditioned model to validate the normal environment
+    # We can also use the goal-conditioned model to validate
     # Just follow the same procedure as above. Not shown here.
     env_goal.close()
     
