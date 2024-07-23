@@ -125,7 +125,7 @@ if __name__ == '__main__':
 
     # --------------------------------------------------------------------------------------------
     # validate the models
-    obs = env_base.reset()
+    obs, _ = env_base.reset()
     episodes = 1000
     epi_count = 0
     while epi_count < episodes:
@@ -134,7 +134,7 @@ if __name__ == '__main__':
         if terminated or truncated:
             epi_count += 1
             rospy.logwarn("Episode: " + str(epi_count))
-            obs = env_base.reset()
+            obs, _ = env_base.reset()
 
     env_base.close()
     
