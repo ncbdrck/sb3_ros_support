@@ -31,6 +31,8 @@ To get started, follow these steps:
     ```shell
     cd ~/catkin_ws/src
     git clone https://github.com/ncbdrck/sb3_ros_support.git
+    cd  sb3_ros_support
+    git checkout gymnasium
     ```
 
 2. This package relies on several Python packages. You can install them by running the following command:
@@ -73,9 +75,9 @@ import rospy
 # simulation or real-world environment framework
 import uniros as gym
 # or 
-# import gym
+# import gymnasium as gym
 
-# the custom ROS based environments (real or sim)
+# the custom ROS-based environments (real or sim)
 import rl_environments
 
 # Models
