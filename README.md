@@ -7,7 +7,7 @@
 
 This package is a **convenience layer** for [Stable Baselines3](https://stable-baselines3.readthedocs.io/en/master/) users who want config-driven, ROS-aware training scripts on top of [UniROS](https://github.com/ncbdrck/UniROS) environments. It adds YAML-loaded hyperparameters, ROS package path resolution, a uniform `train` / `save_model` / `load_trained_model` / `predict` surface, and HER support for goal-conditioned envs.
 
-> **Note**: The environments produced by UniROS / MultiROS / RealROS are **standard gymnasium environments**, so you are not locked in to this package. Plain Stable Baselines3, CleanRL, Tianshou, RLlib, or your own training loop all work — see the [training guide](https://uniros.readthedocs.io/en/latest/guides/training.html) for examples. This package is the easiest path if you're using SB3 and want one less thing to wire up.
+> **Note**: The environments produced by UniROS / MultiROS / RealROS are **standard gymnasium environments**, so you are not locked in to this package. Plain Stable Baselines3 is the tested path here; CleanRL, Tianshou, RLlib, and custom loops should also work but are not exercised by this repo's test suite — see the [training guide](https://uniros.readthedocs.io/en/latest/guides/training.html) for examples. This package is the easiest path if you're using SB3 and want one less thing to wire up.
 
 This package extends the functionality of SB3 models in [FRobs_RL](https://github.com/jmfajardod/frobs_rl) package to provide the following features:
  1. Support for goal-conditioned RL tasks
@@ -85,9 +85,11 @@ import uniros as gym
 # the custom ROS-based environments (real or sim)
 import rl_environments
 
-# Models
+# Models. New code only needs the single SAC class — it auto-selects
+# MultiInputPolicy for Dict observation spaces and enables HER via
+# use_her=True (or the YAML config's use_HER key). SAC_GOAL is kept
+# as a deprecated alias and emits a DeprecationWarning.
 from sb3_ros_support.sac import SAC
-from sb3_ros_support.sac_goal import SAC_GOAL
 
 
 if __name__ == '__main__':
@@ -105,15 +107,17 @@ if __name__ == '__main__':
     env_base.reset()
     env_goal.reset()
    
-    # create the models
-    pkg_path = "rl_environments"
-    config_file_name_base = "sac.yaml"
-    config_file_name_goal = "sac_goal.yaml"
+    # create the models. Training configs live in the
+    # rl_training_validation package; rl_environments only holds
+    # environment-side config (controllers, task definitions).
+    pkg_path = "rl_training_validation"
+    config_file_name_base = "rx200_reacher_sac.yaml"
+    config_file_name_goal = "rx200_reacher_sac_goal.yaml"
     save_path = "/models/sac/"
     log_path = "/logs/sac/"
 
     # --------------------------------------------------------------------------------------------
-    # Creating a model - normal environments
+    # Creating a model - normal environments (Box observation space → MlpPolicy auto-selected)
     model_base = SAC(env_base, save_path, log_path, model_pkg_path=pkg_path, 
                      config_file_pkg=pkg_path, config_filename=config_file_name_base)
     
@@ -123,8 +127,10 @@ if __name__ == '__main__':
 
     # --------------------------------------------------------------------------------------------
     # Creating a model - goal-conditioned environments
-    model_goal = SAC_GOAL(env_goal, save_path, log_path, model_pkg_path=pkg_path, 
-                          config_file_pkg=pkg_path, config_filename=config_file_name_goal)
+    # (Dict observation space → MultiInputPolicy auto-selected; use_her=True enables HER)
+    model_goal = SAC(env_goal, save_path, log_path, model_pkg_path=pkg_path, 
+                     config_file_pkg=pkg_path, config_filename=config_file_name_goal,
+                     use_her=True)
     
     # train the models
     model_goal.train()
@@ -149,11 +155,14 @@ if __name__ == '__main__':
     # Just follow the same procedure as above. Not shown here.
     env_goal.close()
     
-    # If you want to load saved models and validate results, you can use the following code
-    model = SAC.load_trained_model(save_path + "trained_model_name_without_.zip", 
-                                   model_pkg= pkg_path,
+    # If you want to load saved models and validate results, you can use the following code.
+    # For goal-conditioned envs, pass use_her=True (or rely on the YAML use_HER: true key).
+    model = SAC.load_trained_model(save_path + "trained_model_name_without_.zip",
+                                   model_pkg=pkg_path,
                                    env=env_goal,
-                                   config_filename=config_file_name_goal)
+                                   config_file_pkg=pkg_path,
+                                   config_filename=config_file_name_goal,
+                                   use_her=True)
     # Then you can follow the same validation procedure as above
 ```
 **Note**: Please note that the examples are provided for reference only. You may need to modify the code to suit your specific needs.

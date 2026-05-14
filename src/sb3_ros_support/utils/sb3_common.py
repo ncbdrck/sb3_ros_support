@@ -78,14 +78,14 @@ def get_policy_kwargs(parm_dict: dict) -> dict:
 
         # log
         rospy.logwarn(policy_kwargs)
-        print(policy_kwargs)
     else:
         policy_kwargs = None
 
     return policy_kwargs
 
 
-def get_action_noise(action_space_shape, parm_dict: dict, action_noise_type="normal"):
+def get_action_noise(action_space_shape: int, parm_dict: dict,
+                     action_noise_type: str = "normal"):
     """
     Function to get the action noise from the parm_dict.
 
@@ -134,7 +134,7 @@ def get_action_noise(action_space_shape, parm_dict: dict, action_noise_type="nor
     return action_noise
 
 
-def test_env(env):
+def test_env(env) -> bool:
     """
     Use SB3 env checker.
     """
@@ -142,12 +142,48 @@ def test_env(env):
     return True
 
 
+def is_dict_obs_space(env) -> bool:
+    """Return True if ``env.observation_space`` is a Dict (goal-conditioned).
+
+    The algorithm classes use this to auto-select between
+    ``"MlpPolicy"`` (Box observation) and ``"MultiInputPolicy"`` (Dict
+    observation) so callers don't have to specify the policy by hand
+    or pick the right algorithm class for their env.
+    """
+    try:
+        import gymnasium
+        if isinstance(env.observation_space, gymnasium.spaces.Dict):
+            return True
+    except ImportError:
+        pass
+    try:
+        import gym
+        if isinstance(env.observation_space, gym.spaces.Dict):
+            return True
+    except ImportError:
+        pass
+    return False
+
+
+def her_replay_buffer_kwargs(parm_dict: dict) -> dict:
+    """Build HER replay-buffer kwargs from a config's ``her_params`` block.
+
+    Defaults match the previous algorithm-specific code paths: 4
+    sampled goals per real one, ``"future"`` goal-selection strategy.
+    """
+    her = parm_dict.get("her_params", {})
+    return dict(
+        n_sampled_goal=her.get("n_sampled_goal", 4),
+        goal_selection_strategy=her.get("goal_selection_strategy", "future"),
+    )
+
+
 class TimeLimitCallback(BaseCallback):
     """
     Callback for setting an action cycle for training.
     """
 
-    def __init__(self, action_cycle_time, verbose=0):
+    def __init__(self, action_cycle_time: float, verbose: int = 0) -> None:
         """
         Args:
             action_cycle_time (float): The time in seconds for the action cycle.
