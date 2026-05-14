@@ -78,7 +78,6 @@ def get_policy_kwargs(parm_dict: dict) -> dict:
 
         # log
         rospy.logwarn(policy_kwargs)
-        print(policy_kwargs)
     else:
         policy_kwargs = None
 

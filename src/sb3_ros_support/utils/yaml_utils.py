@@ -37,19 +37,16 @@ def load_yaml(pkg_name: Optional[str] = None,
 
         file_abs_path = pkg_path + "/config/" + file_name
         if os.path.exists(pkg_path + "/config/" + file_name) is False:
-            print(f"Config file {file_name} in {file_abs_path} does not exist")
             raise FileNotFoundError(f"Config file {file_name} in {file_abs_path} does not exist")
 
     # If pkg_name and file_name are both None but file_abs_path is not None,
     # check if the YAML file exists at the given absolute path
     elif file_abs_path is not None:
         if os.path.exists(file_abs_path) is False:
-            print(f"Config file {file_abs_path} does not exist!")
             raise FileNotFoundError(f"Config file {file_abs_path} does not exist!")
 
     # If none of these conditions are met, return False
     else:
-        print("Load Failed! Requires either the absolute path or the pkg_name and the file_name as input!")
         raise FileNotFoundError("Load Failed! Requires either the absolute path or the pkg_name and the file_name as input!")
 
     # If the YAML file exists, load it and return the dictionary
@@ -58,7 +55,6 @@ def load_yaml(pkg_name: Optional[str] = None,
             yaml_dict = yaml.load(stream, Loader=SafeLoader)
             return yaml_dict
         except yaml.YAMLError as exc:
-            print(exc)
             raise yaml.YAMLError(exc)
 
 
