@@ -3,7 +3,7 @@
 import os
 import stable_baselines3
 from sb3_ros_support import core
-from sb3_ros_support.utils import yaml_utils
+from sb3_ros_support.utils import sb3_common, yaml_utils
 
 # ROS packages required
 import rospy
@@ -12,13 +12,22 @@ import rospkg
 
 class DQN(core.BasicModel):
     """
-    Deep Q Network (DQN) algorithm.
+    Deep Q Network (DQN) with optional HER for goal-conditioned envs.
 
     Paper: https://arxiv.org/abs/1312.5602
+
+    Policy selection is automatic:
+      * ``gymnasium.spaces.Dict`` observation space → ``"MultiInputPolicy"``
+      * anything else → ``"MlpPolicy"``
+
+    Hindsight Experience Replay (HER) is enabled when ``use_her=True``
+    or when the YAML config has ``use_HER: true``. HER is only valid
+    for goal-conditioned envs.
     """
 
     def __init__(self, env, save_model_path, log_path, model_pkg_path=None, load_trained=False,
-                 load_model_path=None, config_file_pkg=None, config_filename=None, abs_config_path=None):
+                 load_model_path=None, config_file_pkg=None, config_filename=None, abs_config_path=None,
+                 use_her=False):
         """
         Args:
             env (gym.Env): The environment to be used.
@@ -30,10 +39,12 @@ class DQN(core.BasicModel):
             config_file_pkg (str): The package name of the config file. Required if abs_config_path is not provided.
             config_filename (str): The name of the config file. Required if abs_config_path is not provided.
             abs_config_path (str): The absolute path to the config file. Required if config_file_pkg and config_filename are not provided.
+            use_her (bool): Whether to use Hindsight Experience Replay. Only valid for goal-conditioned envs (Dict obs space).
         """
+        policy = "MultiInputPolicy" if sb3_common.is_dict_obs_space(env) else "MlpPolicy"
 
-        rospy.loginfo("Init DQN Policy")
-        print("Init DQN Policy")
+        rospy.loginfo("Init DQN " + policy)
+        print("Init DQN " + policy)
 
         # --- Set the environment
         self.env = env
@@ -69,81 +80,73 @@ class DQN(core.BasicModel):
         parm_dict = yaml_utils.load_yaml(pkg_name=config_file_pkg, file_name=config_filename,
                                          file_abs_path=abs_config_path)
 
-        # --- Init superclass
+        # --- Init superclass. DQN has discrete actions, so no action_noise.
         super().__init__(env, save_model_path, log_path, parm_dict, load_trained=load_trained, action_noise=False)
 
         if load_trained:
             rospy.logwarn("Loading trained model")
             self.model = stable_baselines3.DQN.load(load_model_path, env=env)
-        else:
-            # --- DQN model parameters
-            model_learning_rate = parm_dict["dqn_params"]["learning_rate"]
-            model_buffer_size = parm_dict["dqn_params"]["buffer_size"]
-            model_learning_starts = parm_dict["dqn_params"]["learning_starts"]
-            model_batch_size = parm_dict["dqn_params"]["batch_size"]
-            model_tau = parm_dict["dqn_params"]["tau"]
-            model_gamma = parm_dict["dqn_params"]["gamma"]
-            model_gradient_steps = parm_dict["dqn_params"]["gradient_steps"]
-            model_train_freq_freq = parm_dict["dqn_params"]["train_freq"]["freq"]
-            model_train_freq_unit = parm_dict["dqn_params"]["train_freq"]["unit"]
-            model_target_update_interval = parm_dict["dqn_params"]["target_update_interval"]
-            model_exploration_fraction = parm_dict["dqn_params"]["exploration_fraction"]
-            model_exploration_initial_eps = parm_dict["dqn_params"]["exploration_initial_eps"]
-            model_exploration_final_eps = parm_dict["dqn_params"]["exploration_final_eps"]
-            model_max_grad_norm = parm_dict["dqn_params"]["max_grad_norm"]
-            model_seed = parm_dict["dqn_params"]["seed"]
+            return
 
-            # --- Create or load model
-            if parm_dict["load_model"]:  # Load model
-                model_name = parm_dict["model_name"]
+        # --- Build kwargs shared between load and fresh-construction paths.
+        p = parm_dict["dqn_params"]
+        common_kwargs = dict(
+            verbose=1,
+            learning_rate=p["learning_rate"],
+            buffer_size=p["buffer_size"],
+            learning_starts=p["learning_starts"],
+            batch_size=p["batch_size"],
+            tau=p["tau"],
+            gamma=p["gamma"],
+            gradient_steps=p["gradient_steps"],
+            target_update_interval=p["target_update_interval"],
+            exploration_fraction=p["exploration_fraction"],
+            exploration_initial_eps=p["exploration_initial_eps"],
+            exploration_final_eps=p["exploration_final_eps"],
+            max_grad_norm=p["max_grad_norm"],
+            train_freq=(p["train_freq"]["freq"], p["train_freq"]["unit"]),
+            seed=p["seed"],
+        )
 
-                assert os.path.exists(save_model_path + model_name + ".zip"), "Model {} doesn't exist".format(
-                    model_name)
-                rospy.logwarn("Loading model: " + model_name)
+        # HER replay buffer (only for goal-conditioned envs).
+        her_enabled = use_her or parm_dict.get("use_HER", False)
+        if her_enabled:
+            common_kwargs["replay_buffer_class"] = stable_baselines3.HerReplayBuffer
+            common_kwargs["replay_buffer_kwargs"] = sb3_common.her_replay_buffer_kwargs(parm_dict)
 
-                self.model = stable_baselines3.DQN.load(save_model_path + model_name, env=env, verbose=1,
-                                                        learning_rate=model_learning_rate,
-                                                        buffer_size=model_buffer_size,
-                                                        learning_starts=model_learning_starts,
-                                                        batch_size=model_batch_size,
-                                                        tau=model_tau, gamma=model_gamma,
-                                                        gradient_steps=model_gradient_steps,
-                                                        target_update_interval=model_target_update_interval,
-                                                        exploration_fraction=model_exploration_fraction,
-                                                        exploration_initial_eps=model_exploration_initial_eps,
-                                                        exploration_final_eps=model_exploration_final_eps,
-                                                        max_grad_norm=model_max_grad_norm,
-                                                        train_freq=(model_train_freq_freq, model_train_freq_unit),
-                                                        seed=model_seed)
+        # --- Create or load model
+        if parm_dict["load_model"]:  # Load model
+            model_name = parm_dict["model_name"]
 
-                if os.path.exists(save_model_path + model_name + "_replay_buffer.pkl"):
-                    rospy.logwarn("Loading replay buffer")
-                    self.model.load_replay_buffer(save_model_path + model_name + "_replay_buffer")
-                else:
-                    rospy.logwarn("No replay buffer found")
+            assert os.path.exists(save_model_path + model_name + ".zip"), \
+                "Model {} doesn't exist".format(model_name)
+            rospy.logwarn("Loading model: " + model_name)
 
-            else:  # Create a new model
-                rospy.logwarn("Creating new model")
+            self.model = stable_baselines3.DQN.load(
+                save_model_path + model_name, env=env, **common_kwargs,
+            )
 
-                self.model = stable_baselines3.DQN("MlpPolicy", env, verbose=1, learning_rate=model_learning_rate,
-                                                   buffer_size=model_buffer_size, learning_starts=model_learning_starts,
-                                                   batch_size=model_batch_size,
-                                                   tau=model_tau, gamma=model_gamma,
-                                                   gradient_steps=model_gradient_steps,
-                                                   target_update_interval=model_target_update_interval,
-                                                   exploration_fraction=model_exploration_fraction,
-                                                   exploration_initial_eps=model_exploration_initial_eps,
-                                                   exploration_final_eps=model_exploration_final_eps,
-                                                   max_grad_norm=model_max_grad_norm, policy_kwargs=self.policy_kwargs,
-                                                   train_freq=(model_train_freq_freq, model_train_freq_unit),
-                                                   seed=model_seed)
+            if os.path.exists(save_model_path + model_name + "_replay_buffer.pkl"):
+                rospy.logwarn("Loading replay buffer")
+                self.model.load_replay_buffer(save_model_path + model_name + "_replay_buffer")
+            else:
+                rospy.logwarn("No replay buffer found")
 
-            # --- Logger
-            self.set_model_logger()
+        else:  # Create a new model
+            rospy.logwarn("Creating new model")
+
+            self.model = stable_baselines3.DQN(
+                policy, env,
+                policy_kwargs=self.policy_kwargs,
+                **common_kwargs,
+            )
+
+        # --- Logger
+        self.set_model_logger()
 
     @staticmethod
     def load_trained_model(model_path, model_pkg=None, env=None, config_file_pkg=None, config_filename=None,
-                           abs_config_path=None):
+                           abs_config_path=None, use_her=False):
         """
         Load a trained model. Use only with predict function, as the logs will not be saved.
 
@@ -154,6 +157,7 @@ class DQN(core.BasicModel):
             config_file_pkg (str): The package name of the config file. Use the same package as model_pkg if not provided.
             config_filename (str): The name of the config file.
             abs_config_path (str): The absolute path to the config file.
+            use_her (bool): Whether to use Hindsight Experience Replay. Only valid for goal-conditioned envs.
         Returns:
             model: The loaded model.
         """
@@ -169,6 +173,7 @@ class DQN(core.BasicModel):
 
         model = DQN(env=env, save_model_path=model_path, log_path=model_path, model_pkg_path=model_pkg,
                     load_trained=True, load_model_path=model_path, config_file_pkg=config_file_pkg,
-                    config_filename=config_filename, abs_config_path=abs_config_path)
+                    config_filename=config_filename, abs_config_path=abs_config_path,
+                    use_her=use_her)
 
         return model

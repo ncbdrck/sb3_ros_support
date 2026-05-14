@@ -142,6 +142,42 @@ def test_env(env):
     return True
 
 
+def is_dict_obs_space(env) -> bool:
+    """Return True if ``env.observation_space`` is a Dict (goal-conditioned).
+
+    The algorithm classes use this to auto-select between
+    ``"MlpPolicy"`` (Box observation) and ``"MultiInputPolicy"`` (Dict
+    observation) so callers don't have to specify the policy by hand
+    or pick the right algorithm class for their env.
+    """
+    try:
+        import gymnasium
+        if isinstance(env.observation_space, gymnasium.spaces.Dict):
+            return True
+    except ImportError:
+        pass
+    try:
+        import gym
+        if isinstance(env.observation_space, gym.spaces.Dict):
+            return True
+    except ImportError:
+        pass
+    return False
+
+
+def her_replay_buffer_kwargs(parm_dict: dict) -> dict:
+    """Build HER replay-buffer kwargs from a config's ``her_params`` block.
+
+    Defaults match the previous algorithm-specific code paths: 4
+    sampled goals per real one, ``"future"`` goal-selection strategy.
+    """
+    her = parm_dict.get("her_params", {})
+    return dict(
+        n_sampled_goal=her.get("n_sampled_goal", 4),
+        goal_selection_strategy=her.get("goal_selection_strategy", "future"),
+    )
+
+
 class TimeLimitCallback(BaseCallback):
     """
     Callback for setting an action cycle for training.

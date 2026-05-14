@@ -3,37 +3,11 @@
 import os
 import stable_baselines3
 from sb3_ros_support import core
-from sb3_ros_support.utils import yaml_utils
+from sb3_ros_support.utils import sb3_common, yaml_utils
 
 # ROS packages required
 import rospy
 import rospkg
-
-
-def _is_dict_obs_space(env):
-    """Return True if env exposes a Dict observation space (goal-conditioned)."""
-    try:
-        import gymnasium
-        if isinstance(env.observation_space, gymnasium.spaces.Dict):
-            return True
-    except ImportError:
-        pass
-    try:
-        import gym
-        if isinstance(env.observation_space, gym.spaces.Dict):
-            return True
-    except ImportError:
-        pass
-    return False
-
-
-def _her_replay_buffer_kwargs(parm_dict):
-    """Build HER replay-buffer kwargs from the ``her_params`` config block."""
-    her = parm_dict.get("her_params", {})
-    return dict(
-        n_sampled_goal=her.get("n_sampled_goal", 4),
-        goal_selection_strategy=her.get("goal_selection_strategy", "future"),
-    )
 
 
 class SAC(core.BasicModel):
@@ -67,7 +41,7 @@ class SAC(core.BasicModel):
             abs_config_path (str): The absolute path to the config file. Required if config_file_pkg and config_filename are not provided.
             use_her (bool): Whether to use Hindsight Experience Replay. Only valid for goal-conditioned envs (Dict obs space).
         """
-        policy = "MultiInputPolicy" if _is_dict_obs_space(env) else "MlpPolicy"
+        policy = "MultiInputPolicy" if sb3_common.is_dict_obs_space(env) else "MlpPolicy"
 
         rospy.loginfo("Init SAC " + policy)
         print("Init SAC " + policy)
@@ -151,7 +125,7 @@ class SAC(core.BasicModel):
         her_enabled = use_her or parm_dict.get("use_HER", False)
         if her_enabled:
             common_kwargs["replay_buffer_class"] = stable_baselines3.HerReplayBuffer
-            common_kwargs["replay_buffer_kwargs"] = _her_replay_buffer_kwargs(parm_dict)
+            common_kwargs["replay_buffer_kwargs"] = sb3_common.her_replay_buffer_kwargs(parm_dict)
 
         # --- Create or load model
         if parm_dict["load_model"]:  # Load model

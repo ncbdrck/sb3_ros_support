@@ -1,274 +1,39 @@
 #!/bin/python3
 
-import os
-import stable_baselines3
-from sb3_ros_support import core
-from sb3_ros_support.utils import yaml_utils
+"""
+Backwards-compat shim for ``sb3_ros_support.td3_goal.TD3_GOAL``.
 
-# ROS packages required
-import rospy
-import rospkg
+Goal-conditioned TD3 support was consolidated into the single
+:class:`sb3_ros_support.td3.TD3` class. ``TD3`` now auto-detects the
+policy type from the env's observation space
+(:class:`gymnasium.spaces.Dict` → ``"MultiInputPolicy"``, otherwise
+``"MlpPolicy"``) and enables Hindsight Experience Replay (HER) via
+the ``use_her`` constructor flag or the YAML config's ``use_HER``
+key.
+
+``TD3_GOAL`` remains a working alias for backwards compatibility but
+emits a :class:`DeprecationWarning` on instantiation. New code should
+import :class:`sb3_ros_support.td3.TD3` directly.
+"""
+
+import warnings
+
+from sb3_ros_support.td3 import TD3
 
 
-class TD3_GOAL(core.BasicModel):
-    """
-    Twin Delayed DDPG (TD3) algorithm.
+class TD3_GOAL(TD3):
+    """Deprecated. Use :class:`sb3_ros_support.td3.TD3` with ``use_her=True``."""
 
-    Paper: https://arxiv.org/abs/1802.09477
-    """
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "TD3_GOAL is deprecated. Use sb3_ros_support.td3.TD3 instead: "
+            "the policy type is auto-detected from the env's observation "
+            "space, and HER is enabled via use_her=True (or YAML "
+            "use_HER: true).",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
 
-    def __init__(self, env, save_model_path, log_path, model_pkg_path=None, load_trained=False,
-                 load_model_path=None, config_file_pkg=None, config_filename=None, abs_config_path=None,
-                 use_her=False):
-        """
-        Args:
-            env (gym.Env): The environment to be used.
-            save_model_path (str): The path to save the model. Can be absolute or relative.
-            log_path (str): The abs path to save the log. Can be absolute or relative.
-            model_pkg_path (str): The package name to save or load the model.
-            load_trained (bool): Whether to load a trained model or not.
-            load_model_path (str): The path to load the model. Should include the model name. Can be absolute or relative.
-            config_file_pkg (str): The package name of the config file. Required if abs_config_path is not provided.
-            config_filename (str): The name of the config file. Required if abs_config_path is not provided.
-            abs_config_path (str): The absolute path to the config file. Required if config_file_pkg and config_filename are not provided.
-            use_her (bool): Whether to use Hindsight Experience Replay or not.
-        """
 
-        rospy.loginfo("Init TD3 MultiInputPolicy")
-        print("Init TD3 MultiInputPolicy")
-
-        # --- Set the environment
-        self.env = env
-
-        # --- Set the save and log path
-        if model_pkg_path is not None:
-            rospack = rospkg.RosPack()
-            pkg_path = rospack.get_path(model_pkg_path)
-
-            # check if the path starts with "/"
-            if save_model_path[0] != "/":
-                save_model_path = "/" + save_model_path
-            if log_path[0] != "/":
-                log_path = "/" + log_path
-
-            # check if the path ends with "/"
-            if save_model_path[-1] != "/":
-                save_model_path = save_model_path + "/"
-            if log_path[-1] != "/":
-                log_path = log_path + "/"
-
-            save_model_path = pkg_path + save_model_path
-            log_path = pkg_path + log_path
-
-            if load_trained:
-                # check if the path starts with "/"
-                if load_model_path[0] != "/":
-                    load_model_path = "/" + load_model_path
-
-                load_model_path = pkg_path + load_model_path
-
-        # Load YAML Config File
-        parm_dict = yaml_utils.load_yaml(pkg_name=config_file_pkg, file_name=config_filename,
-                                         file_abs_path=abs_config_path)
-
-        # get the action noise type
-        action_noise_type = parm_dict["action_noise_type"]
-        use_action_noise = parm_dict["use_action_noise"]
-
-        # --- Init superclass
-        super().__init__(env, save_model_path, log_path, parm_dict, load_trained=load_trained,
-                         action_noise_type=action_noise_type, action_noise=use_action_noise)
-
-        if load_trained:
-            rospy.logwarn("Loading trained model")
-            self.model = stable_baselines3.TD3.load(load_model_path, env=env)
-        else:
-
-            # --- TD3 model parameters
-            model_learning_rate = parm_dict["td3_params"]["learning_rate"]
-            model_buffer_size = parm_dict["td3_params"]["buffer_size"]
-            model_learning_starts = parm_dict["td3_params"]["learning_starts"]
-            model_batch_size = parm_dict["td3_params"]["batch_size"]
-            model_tau = parm_dict["td3_params"]["tau"]
-            model_gamma = parm_dict["td3_params"]["gamma"]
-            model_gradient_steps = parm_dict["td3_params"]["gradient_steps"]
-            model_train_freq_freq = parm_dict["td3_params"]["train_freq"]["freq"]
-            model_train_freq_unit = parm_dict["td3_params"]["train_freq"]["unit"]
-            model_policy_delay = parm_dict["td3_params"]["policy_delay"]
-            model_target_policy_noise = parm_dict["td3_params"]["target_policy_noise"]
-            model_target_noise_clip = parm_dict["td3_params"]["target_noise_clip"]
-            model_seed = parm_dict["td3_params"]["seed"]
-
-            # --- Create or load model
-            if parm_dict["load_model"]:  # Load model
-                model_name = parm_dict["model_name"]
-
-                assert os.path.exists(save_model_path + model_name + ".zip"), "Model {} doesn't exist".format(
-                    model_name)
-                rospy.logwarn("Loading model: " + model_name)
-
-                if use_her or parm_dict["use_HER"]:
-                    # HER parameters
-                    if "n_sampled_goal" in parm_dict["her_params"]:
-                        n_sampled_goal = parm_dict["her_params"]["n_sampled_goal"]
-                    else:
-                        n_sampled_goal = 4
-
-                    if "goal_selection_strategy" in parm_dict["her_params"]:
-                        goal_selection_strategy = parm_dict["her_params"]["goal_selection_strategy"]
-                    else:
-                        goal_selection_strategy = "future"
-
-                    if "max_episode_length" in parm_dict["her_params"]:
-                        max_episode_length = parm_dict["her_params"]["max_episode_length"]
-                    else:
-                        max_episode_length = None
-
-                    if "online_sampling" in parm_dict["her_params"]:
-                        online_sampling = parm_dict["her_params"]["online_sampling"]
-                    else:
-                        online_sampling = True
-
-                    self.model = stable_baselines3.TD3.load(save_model_path + model_name, env=env, verbose=1,
-                                                            action_noise=self.action_noise,
-                                                            learning_rate=model_learning_rate,
-                                                            buffer_size=model_buffer_size,
-                                                            learning_starts=model_learning_starts,
-                                                            batch_size=model_batch_size, tau=model_tau,
-                                                            gamma=model_gamma,
-                                                            gradient_steps=model_gradient_steps,
-                                                            policy_delay=model_policy_delay,
-                                                            target_policy_noise=model_target_policy_noise,
-                                                            target_noise_clip=model_target_noise_clip,
-                                                            train_freq=(model_train_freq_freq, model_train_freq_unit),
-
-                                                            replay_buffer_class=stable_baselines3.HerReplayBuffer,
-                                                            replay_buffer_kwargs=dict(
-                                                                n_sampled_goal=n_sampled_goal,
-                                                                goal_selection_strategy=goal_selection_strategy,
-                                                                #max_episode_length=max_episode_length,
-                                                                #online_sampling=online_sampling,
-                                                            ),
-
-                                                            seed=model_seed
-                                                            )
-
-                else:
-
-                    self.model = stable_baselines3.TD3.load(save_model_path + model_name, env=env, verbose=1,
-                                                            action_noise=self.action_noise,
-                                                            learning_rate=model_learning_rate,
-                                                            buffer_size=model_buffer_size,
-                                                            learning_starts=model_learning_starts,
-                                                            batch_size=model_batch_size, tau=model_tau,
-                                                            gamma=model_gamma,
-                                                            gradient_steps=model_gradient_steps,
-                                                            policy_delay=model_policy_delay,
-                                                            target_policy_noise=model_target_policy_noise,
-                                                            target_noise_clip=model_target_noise_clip,
-                                                            train_freq=(model_train_freq_freq, model_train_freq_unit),
-                                                            seed=model_seed)
-
-                if os.path.exists(save_model_path + model_name + "_replay_buffer.pkl"):
-                    rospy.logwarn("Loading replay buffer")
-                    self.model.load_replay_buffer(save_model_path + model_name + "_replay_buffer")
-                else:
-                    rospy.logwarn("No replay buffer found")
-
-            else:  # Create a new model
-                rospy.logwarn("Creating new model")
-
-                if use_her or parm_dict["use_HER"]:
-                    # HER parameters
-                    if "n_sampled_goal" in parm_dict["her_params"]:
-                        n_sampled_goal = parm_dict["her_params"]["n_sampled_goal"]
-                    else:
-                        n_sampled_goal = 4
-
-                    if "goal_selection_strategy" in parm_dict["her_params"]:
-                        goal_selection_strategy = parm_dict["her_params"]["goal_selection_strategy"]
-                    else:
-                        goal_selection_strategy = "future"
-
-                    if "max_episode_length" in parm_dict["her_params"]:
-                        max_episode_length = parm_dict["her_params"]["max_episode_length"]
-                    else:
-                        max_episode_length = None
-
-                    if "online_sampling" in parm_dict["her_params"]:
-                        online_sampling = parm_dict["her_params"]["online_sampling"]
-                    else:
-                        online_sampling = True
-
-                    self.model = stable_baselines3.TD3("MultiInputPolicy", env, verbose=1,
-                                                       action_noise=self.action_noise,
-                                                       learning_rate=model_learning_rate, buffer_size=model_buffer_size,
-                                                       learning_starts=model_learning_starts,
-                                                       batch_size=model_batch_size, tau=model_tau, gamma=model_gamma,
-                                                       gradient_steps=model_gradient_steps,
-                                                       policy_kwargs=self.policy_kwargs,
-                                                       policy_delay=model_policy_delay,
-                                                       target_policy_noise=model_target_policy_noise,
-                                                       target_noise_clip=model_target_noise_clip,
-                                                       train_freq=(model_train_freq_freq, model_train_freq_unit),
-
-                                                       replay_buffer_class=stable_baselines3.HerReplayBuffer,
-                                                       replay_buffer_kwargs=dict(
-                                                           n_sampled_goal=n_sampled_goal,
-                                                           goal_selection_strategy=goal_selection_strategy,
-                                                           #max_episode_length=max_episode_length,
-                                                           #online_sampling=online_sampling,
-                                                       ),
-
-                                                       seed=model_seed
-                                                       )
-
-                else:
-
-                    self.model = stable_baselines3.TD3("MultiInputPolicy", env, verbose=1,
-                                                       action_noise=self.action_noise,
-                                                       learning_rate=model_learning_rate, buffer_size=model_buffer_size,
-                                                       learning_starts=model_learning_starts,
-                                                       batch_size=model_batch_size, tau=model_tau, gamma=model_gamma,
-                                                       gradient_steps=model_gradient_steps,
-                                                       policy_kwargs=self.policy_kwargs,
-                                                       policy_delay=model_policy_delay,
-                                                       target_policy_noise=model_target_policy_noise,
-                                                       target_noise_clip=model_target_noise_clip,
-                                                       train_freq=(model_train_freq_freq, model_train_freq_unit),
-                                                       seed=model_seed)
-
-            # --- Logger
-            self.set_model_logger()
-
-    @staticmethod
-    def load_trained_model(model_path, model_pkg=None, env=None, config_file_pkg=None, config_filename=None,
-                           abs_config_path=None):
-        """
-        Load a trained model. Use only with predict function, as the logs will not be saved.
-
-        Args:
-            model_path (str): The path to the trained model. Can be absolute or relative.
-            model_pkg (str): The package name to load the model. Required if abs_model_path is relative.
-            env (gym.Env): The environment to be used.
-            config_file_pkg (str): The package name of the config file. Use the same package as model_pkg if not provided.
-            config_filename (str): The name of the config file.
-            abs_config_path (str): The absolute path to the config file.
-        Returns:
-            model: The loaded model.
-        """
-
-        if config_file_pkg is None and config_filename is None and abs_config_path is None:
-            config_file_pkg = "sb3_ros_support"
-            config_filename = "td3_goal.yaml"
-
-            rospy.logwarn("Using default config file: " + config_filename + " from package: " + config_file_pkg)
-
-        elif model_pkg is not None and config_filename is not None and config_file_pkg is None:
-            config_file_pkg = model_pkg
-
-        model = TD3_GOAL(env=env, save_model_path=model_path, log_path=model_path, model_pkg_path=model_pkg,
-                         load_trained=True, load_model_path=model_path, config_file_pkg=config_file_pkg,
-                         config_filename=config_filename, abs_config_path=abs_config_path)
-
-        return model
+__all__ = ["TD3_GOAL"]
