@@ -25,13 +25,16 @@ jobs:
       - name: Install Python deps
         run: |
           python -m pip install --upgrade pip
-          pip install catkin_pkg pytest pyyaml
+          # setup.py imports catkin_pkg + uses distutils. Install build deps in
+          # the OUTER env, then pass --no-build-isolation to pip install so the
+          # build subprocess can see them.
+          pip install setuptools wheel catkin_pkg pytest pyyaml
           # SB3 brings torch as a transitive dep — a fairly heavy install
           # but unavoidable since sb3_ros_support imports stable_baselines3
           # at module load. ~3-5 min on first run; cached on subsequent
           # CI runs via actions/setup-python's pip cache.
           pip install stable-baselines3 numpy
-          pip install -e .
+          pip install -e . --no-build-isolation
 
       - name: Run pytest
         run: pytest tests/ -v
