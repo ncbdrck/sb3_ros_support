@@ -85,7 +85,8 @@ def get_policy_kwargs(parm_dict: dict) -> dict:
     return policy_kwargs
 
 
-def get_action_noise(action_space_shape, parm_dict: dict, action_noise_type="normal"):
+def get_action_noise(action_space_shape: int, parm_dict: dict,
+                     action_noise_type: str = "normal"):
     """
     Function to get the action noise from the parm_dict.
 
@@ -134,7 +135,7 @@ def get_action_noise(action_space_shape, parm_dict: dict, action_noise_type="nor
     return action_noise
 
 
-def test_env(env):
+def test_env(env) -> bool:
     """
     Use SB3 env checker.
     """
@@ -183,7 +184,7 @@ class TimeLimitCallback(BaseCallback):
     Callback for setting an action cycle for training.
     """
 
-    def __init__(self, action_cycle_time, verbose=0):
+    def __init__(self, action_cycle_time: float, verbose: int = 0) -> None:
         """
         Args:
             action_cycle_time (float): The time in seconds for the action cycle.

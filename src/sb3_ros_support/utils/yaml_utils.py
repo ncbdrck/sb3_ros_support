@@ -1,14 +1,18 @@
 #!/bin/python3
 
+import os
+from typing import Any, Dict, Optional
+
 import rospkg
 import rospy
-import os
 import yaml
 from yaml.loader import SafeLoader
 
 
 # load the yaml file and return dict that contain all the parameters
-def load_yaml(pkg_name=None, file_name=None, file_abs_path=None) -> dict:
+def load_yaml(pkg_name: Optional[str] = None,
+              file_name: Optional[str] = None,
+              file_abs_path: Optional[str] = None) -> Dict[str, Any]:
     """
     Fetch a YAML file from a package or an abs path, parse and converts to a Python dictionary.
 
