@@ -9,6 +9,8 @@ Recreated to overcome the following errors:
 """
 import os
 from datetime import datetime
+from typing import Any, Dict, Optional, Tuple
+
 from sb3_ros_support.utils.sb3_common import get_policy_kwargs, get_action_noise, test_env, TimeLimitCallback
 
 # ROS packages required
@@ -26,8 +28,9 @@ class BasicModel:
     Base class for all the algorithms of Stable Baselines3.
     """
 
-    def __init__(self, env, save_model_path, log_path, parm_dict, load_trained=False,
-                 action_noise_type="normal", action_noise=True) -> None:
+    def __init__(self, env: Any, save_model_path: str, log_path: str,
+                 parm_dict: Dict[str, Any], load_trained: bool = False,
+                 action_noise_type: str = "normal", action_noise: bool = True) -> None:
         """
         Args:
             env (gym.Env): The environment to be used.
@@ -62,7 +65,7 @@ class BasicModel:
             self.checkpoint_callback = CheckpointCallback(save_freq=save_freq, save_path=save_model_path,
                                                           name_prefix=save_prefix)
 
-    def train(self, action_cycle_time=None) -> bool:
+    def train(self, action_cycle_time: Optional[float] = None) -> bool:
         """
         Function to train the model the number of steps specified in the yaml config file.
         The function will automatically save the model after training.
@@ -120,7 +123,7 @@ class BasicModel:
 
         return True
 
-    def save_replay_buffer(self):
+    def save_replay_buffer(self) -> None:
         """
         Function to save the replay buffer, to be used the training must be finished or an error will be raised.
 
@@ -171,7 +174,8 @@ class BasicModel:
         test_env(self.env)
         return True
 
-    def predict(self, observation, state=None, deterministic=False):
+    def predict(self, observation: Any, state: Optional[Any] = None,
+                deterministic: bool = False) -> Tuple[Any, Any]:
         """
         Get the current action based on the observation, state or mask
 
