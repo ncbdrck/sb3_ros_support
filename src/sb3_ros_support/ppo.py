@@ -39,7 +39,6 @@ class PPO(core.BasicModel):
         """
 
         rospy.loginfo("Init PPO Policy")
-        print("Init PPO Policy")
 
         # --- Set the environment
         self.env = env

@@ -50,7 +50,6 @@ class DQN(core.BasicModel):
         policy = "MultiInputPolicy" if sb3_common.is_dict_obs_space(env) else "MlpPolicy"
 
         rospy.loginfo("Init DQN " + policy)
-        print("Init DQN " + policy)
 
         # --- Set the environment
         self.env = env

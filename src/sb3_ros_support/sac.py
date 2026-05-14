@@ -50,7 +50,6 @@ class SAC(core.BasicModel):
         policy = "MultiInputPolicy" if sb3_common.is_dict_obs_space(env) else "MlpPolicy"
 
         rospy.loginfo("Init SAC " + policy)
-        print("Init SAC " + policy)
 
         # --- Set the environment
         self.env = env

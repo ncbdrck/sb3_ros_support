@@ -51,7 +51,6 @@ class DDPG(core.BasicModel):
         policy = "MultiInputPolicy" if sb3_common.is_dict_obs_space(env) else "MlpPolicy"
 
         rospy.loginfo("Init DDPG " + policy)
-        print("Init DDPG " + policy)
 
         # --- Set the environment
         self.env = env

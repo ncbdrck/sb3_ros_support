@@ -39,7 +39,6 @@ class A2C(core.BasicModel):
         """
 
         rospy.loginfo("Init A2C Policy")
-        print("Init A2C Policy")
 
         # --- Set the environment
         self.env = env
