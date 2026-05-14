@@ -2,7 +2,9 @@
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-This package is an extension of the [SB3](https://stable-baselines3.readthedocs.io/en/master/) package that provides ROS support for Stable Baselines3. It allows you to train robotics RL agents in the real world and simulations using ROS.
+This package is a **convenience layer** for [Stable Baselines3](https://stable-baselines3.readthedocs.io/en/master/) users who want config-driven, ROS-aware training scripts on top of [UniROS](https://github.com/ncbdrck/UniROS) environments. It adds YAML-loaded hyperparameters, ROS package path resolution, a uniform `train` / `save_model` / `load_trained_model` / `predict` surface, and HER support for goal-conditioned envs.
+
+> **Note**: The environments produced by UniROS / MultiROS / RealROS are **standard gymnasium environments**, so you are not locked in to this package. Plain Stable Baselines3, CleanRL, Tianshou, RLlib, or your own training loop all work — see the [training documentation](https://github.com/ncbdrck/UniROS/tree/main/docs/guides/training.rst) for examples. This package is the easiest path if you're using SB3 and want one less thing to wire up.
 
 This package extends the functionality of SB3 models in [FRobs_RL](https://github.com/jmfajardod/frobs_rl) package to provide the following features:
  1. Support for goal-conditioned RL tasks
