@@ -1,6 +1,8 @@
 #!/bin/python3
 
 import os
+from typing import Any, Optional
+
 import stable_baselines3
 from sb3_ros_support import core
 from sb3_ros_support.utils import yaml_utils
@@ -17,8 +19,12 @@ class PPO(core.BasicModel):
     Paper: https://arxiv.org/abs/1707.06347
     """
 
-    def __init__(self, env, save_model_path, log_path, model_pkg_path=None, load_trained=False,
-                 load_model_path=None, config_file_pkg=None, config_filename=None, abs_config_path=None):
+    def __init__(self, env: Any, save_model_path: str, log_path: str,
+                 model_pkg_path: Optional[str] = None, load_trained: bool = False,
+                 load_model_path: Optional[str] = None,
+                 config_file_pkg: Optional[str] = None,
+                 config_filename: Optional[str] = None,
+                 abs_config_path: Optional[str] = None) -> None:
         """
         Args:
             env (gym.Env): The environment to be used.
@@ -139,8 +145,11 @@ class PPO(core.BasicModel):
             self.set_model_logger()
 
     @staticmethod
-    def load_trained_model(model_path, model_pkg=None, env=None, config_file_pkg=None, config_filename=None,
-                           abs_config_path=None):
+    def load_trained_model(model_path: str, model_pkg: Optional[str] = None,
+                           env: Optional[Any] = None,
+                           config_file_pkg: Optional[str] = None,
+                           config_filename: Optional[str] = None,
+                           abs_config_path: Optional[str] = None) -> "PPO":
         """
         Load a trained model. Use only with predict function, as the logs will not be saved.
 
