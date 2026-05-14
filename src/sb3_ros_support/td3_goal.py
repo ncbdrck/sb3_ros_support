@@ -17,6 +17,7 @@ import :class:`sb3_ros_support.td3.TD3` directly.
 """
 
 import warnings
+from typing import Any, Optional
 
 from sb3_ros_support.td3 import TD3
 
@@ -34,6 +35,35 @@ class TD3_GOAL(TD3):
             stacklevel=2,
         )
         super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def load_trained_model(model_path: str, model_pkg: Optional[str] = None,
+                           env: Optional[Any] = None,
+                           config_file_pkg: Optional[str] = None,
+                           config_filename: Optional[str] = None,
+                           abs_config_path: Optional[str] = None,
+                           use_her: bool = True) -> "TD3_GOAL":
+        """Backwards-compat loader preserving the pre-cleanup defaults.
+
+        Defaults ``config_filename`` to ``td3_goal.yaml`` and ``use_her``
+        to ``True`` so legacy callers using
+        ``TD3_GOAL.load_trained_model(path, env=goal_env)`` keep the
+        goal-conditioned behaviour instead of silently picking up
+        ``td3.yaml`` with HER disabled.
+        """
+        if config_file_pkg is None and config_filename is None and abs_config_path is None:
+            config_file_pkg = "sb3_ros_support"
+            config_filename = "td3_goal.yaml"
+        elif model_pkg is not None and config_filename is not None and config_file_pkg is None:
+            config_file_pkg = model_pkg
+
+        return TD3_GOAL(
+            env=env, save_model_path=model_path, log_path=model_path,
+            model_pkg_path=model_pkg, load_trained=True,
+            load_model_path=model_path, config_file_pkg=config_file_pkg,
+            config_filename=config_filename, abs_config_path=abs_config_path,
+            use_her=use_her,
+        )
 
 
 __all__ = ["TD3_GOAL"]
