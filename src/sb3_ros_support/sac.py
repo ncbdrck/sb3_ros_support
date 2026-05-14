@@ -10,15 +10,50 @@ import rospy
 import rospkg
 
 
+def _is_dict_obs_space(env):
+    """Return True if env exposes a Dict observation space (goal-conditioned)."""
+    try:
+        import gymnasium
+        if isinstance(env.observation_space, gymnasium.spaces.Dict):
+            return True
+    except ImportError:
+        pass
+    try:
+        import gym
+        if isinstance(env.observation_space, gym.spaces.Dict):
+            return True
+    except ImportError:
+        pass
+    return False
+
+
+def _her_replay_buffer_kwargs(parm_dict):
+    """Build HER replay-buffer kwargs from the ``her_params`` config block."""
+    her = parm_dict.get("her_params", {})
+    return dict(
+        n_sampled_goal=her.get("n_sampled_goal", 4),
+        goal_selection_strategy=her.get("goal_selection_strategy", "future"),
+    )
+
+
 class SAC(core.BasicModel):
     """
-    Soft Actor-Critic (SAC) algorithm.
+    Soft Actor-Critic (SAC) with optional HER for goal-conditioned envs.
 
     Paper: https://arxiv.org/abs/1801.01290
+
+    Policy selection is automatic:
+      * ``gymnasium.spaces.Dict`` observation space → ``"MultiInputPolicy"``
+      * anything else → ``"MlpPolicy"``
+
+    Hindsight Experience Replay (HER) is enabled when ``use_her=True``
+    or when the YAML config has ``use_HER: true``. HER is only valid
+    for goal-conditioned envs.
     """
 
     def __init__(self, env, save_model_path, log_path, model_pkg_path=None, load_trained=False,
-                 load_model_path=None, config_file_pkg=None, config_filename=None, abs_config_path=None):
+                 load_model_path=None, config_file_pkg=None, config_filename=None, abs_config_path=None,
+                 use_her=False):
         """
         Args:
             env (gym.Env): The environment to be used.
@@ -30,10 +65,12 @@ class SAC(core.BasicModel):
             config_file_pkg (str): The package name of the config file. Required if abs_config_path is not provided.
             config_filename (str): The name of the config file. Required if abs_config_path is not provided.
             abs_config_path (str): The absolute path to the config file. Required if config_file_pkg and config_filename are not provided.
+            use_her (bool): Whether to use Hindsight Experience Replay. Only valid for goal-conditioned envs (Dict obs space).
         """
+        policy = "MultiInputPolicy" if _is_dict_obs_space(env) else "MlpPolicy"
 
-        rospy.loginfo("Init SAC Policy")
-        print("Init SAC Policy")
+        rospy.loginfo("Init SAC " + policy)
+        print("Init SAC " + policy)
 
         # --- Set the environment
         self.env = env
@@ -75,84 +112,80 @@ class SAC(core.BasicModel):
         if load_trained:
             rospy.logwarn("Loading trained model")
             self.model = stable_baselines3.SAC.load(load_model_path, env=env)
+            return
+
+        # --- SDE for SAC
+        if parm_dict["use_sde"]:
+            model_sde = True
+            model_sde_sample_freq = parm_dict["sde_params"]["sde_sample_freq"]
+            model_use_sde_at_warmup = parm_dict["sde_params"]["use_sde_at_warmup"]
+            self.action_noise = None
         else:
-            # --- SDE for SAC
-            if parm_dict["use_sde"]:
-                model_sde = True
-                model_sde_sample_freq = parm_dict["sde_params"]["sde_sample_freq"]
-                model_use_sde_at_warmup = parm_dict["sde_params"]["use_sde_at_warmup"]
-                self.action_noise = None
+            model_sde = False
+            model_sde_sample_freq = -1
+            model_use_sde_at_warmup = False
+
+        # --- Build kwargs shared between load and fresh-construction paths.
+        p = parm_dict["sac_params"]
+        common_kwargs = dict(
+            verbose=1,
+            action_noise=self.action_noise,
+            use_sde=model_sde,
+            sde_sample_freq=model_sde_sample_freq,
+            use_sde_at_warmup=model_use_sde_at_warmup,
+            learning_rate=p["learning_rate"],
+            buffer_size=p["buffer_size"],
+            learning_starts=p["learning_starts"],
+            batch_size=p["batch_size"],
+            tau=p["tau"],
+            gamma=p["gamma"],
+            gradient_steps=p["gradient_steps"],
+            ent_coef=p["ent_coef"],
+            target_update_interval=p["target_update_interval"],
+            target_entropy=p["target_entropy"],
+            train_freq=(p["train_freq"]["freq"], p["train_freq"]["unit"]),
+            seed=p["seed"],
+        )
+
+        # HER replay buffer (only for goal-conditioned envs).
+        her_enabled = use_her or parm_dict.get("use_HER", False)
+        if her_enabled:
+            common_kwargs["replay_buffer_class"] = stable_baselines3.HerReplayBuffer
+            common_kwargs["replay_buffer_kwargs"] = _her_replay_buffer_kwargs(parm_dict)
+
+        # --- Create or load model
+        if parm_dict["load_model"]:  # Load model
+            model_name = parm_dict["model_name"]
+
+            assert os.path.exists(save_model_path + model_name + ".zip"), \
+                "Model {} doesn't exist".format(model_name)
+            rospy.logwarn("Loading model: " + model_name)
+
+            self.model = stable_baselines3.SAC.load(
+                save_model_path + model_name, env=env, **common_kwargs,
+            )
+
+            if os.path.exists(save_model_path + model_name + "_replay_buffer.pkl"):
+                rospy.logwarn("Loading replay buffer")
+                self.model.load_replay_buffer(save_model_path + model_name + "_replay_buffer")
             else:
-                model_sde = False
-                model_sde_sample_freq = -1
-                model_use_sde_at_warmup = False
+                rospy.logwarn("No replay buffer found")
 
-            # --- SAC model parameters
-            model_learning_rate = parm_dict["sac_params"]["learning_rate"]
-            model_buffer_size = parm_dict["sac_params"]["buffer_size"]
-            model_learning_starts = parm_dict["sac_params"]["learning_starts"]
-            model_batch_size = parm_dict["sac_params"]["batch_size"]
-            model_tau = parm_dict["sac_params"]["tau"]
-            model_gamma = parm_dict["sac_params"]["gamma"]
-            model_gradient_steps = parm_dict["sac_params"]["gradient_steps"]
-            model_ent_coef = parm_dict["sac_params"]["ent_coef"]
-            model_target_update_interval = parm_dict["sac_params"]["target_update_interval"]
-            model_target_entropy = parm_dict["sac_params"]["target_entropy"]
-            model_train_freq_freq = parm_dict["sac_params"]["train_freq"]["freq"]
-            model_train_freq_unit = parm_dict["sac_params"]["train_freq"]["unit"]
-            model_seed = parm_dict["sac_params"]["seed"]
+        else:  # Create a new model
+            rospy.logwarn("Creating new model")
 
-            # --- Create or load model
-            if parm_dict["load_model"]:  # Load model
-                model_name = parm_dict["model_name"]
+            self.model = stable_baselines3.SAC(
+                policy, env,
+                policy_kwargs=self.policy_kwargs,
+                **common_kwargs,
+            )
 
-                assert os.path.exists(save_model_path + model_name + ".zip"), "Model {} doesn't exist".format(
-                    model_name)
-                rospy.logwarn("Loading model: " + model_name)
-
-                self.model = stable_baselines3.SAC.load(save_model_path + model_name, env=env, verbose=1,
-                                                        action_noise=self.action_noise,
-                                                        use_sde=model_sde, sde_sample_freq=model_sde_sample_freq,
-                                                        use_sde_at_warmup=model_use_sde_at_warmup,
-                                                        learning_rate=model_learning_rate,
-                                                        buffer_size=model_buffer_size,
-                                                        learning_starts=model_learning_starts,
-                                                        batch_size=model_batch_size, tau=model_tau, gamma=model_gamma,
-                                                        gradient_steps=model_gradient_steps,
-                                                        ent_coef=model_ent_coef,
-                                                        target_update_interval=model_target_update_interval,
-                                                        target_entropy=model_target_entropy,
-                                                        train_freq=(model_train_freq_freq, model_train_freq_unit),
-                                                        seed=model_seed)
-
-                if os.path.exists(save_model_path + model_name + "_replay_buffer.pkl"):
-                    rospy.logwarn("Loading replay buffer")
-                    self.model.load_replay_buffer(save_model_path + model_name + "_replay_buffer")
-                else:
-                    rospy.logwarn("No replay buffer found")
-
-            else:  # Create a new model
-                rospy.logwarn("Creating new model")
-
-                self.model = stable_baselines3.SAC("MlpPolicy", env, verbose=1, action_noise=self.action_noise,
-                                                   use_sde=model_sde, sde_sample_freq=model_sde_sample_freq,
-                                                   use_sde_at_warmup=model_use_sde_at_warmup,
-                                                   learning_rate=model_learning_rate, buffer_size=model_buffer_size,
-                                                   learning_starts=model_learning_starts,
-                                                   batch_size=model_batch_size, tau=model_tau, gamma=model_gamma,
-                                                   gradient_steps=model_gradient_steps,
-                                                   policy_kwargs=self.policy_kwargs, ent_coef=model_ent_coef,
-                                                   target_update_interval=model_target_update_interval,
-                                                   target_entropy=model_target_entropy,
-                                                   train_freq=(model_train_freq_freq, model_train_freq_unit),
-                                                   seed=model_seed)
-
-            # --- Logger
-            self.set_model_logger()
+        # --- Logger
+        self.set_model_logger()
 
     @staticmethod
     def load_trained_model(model_path, model_pkg=None, env=None, config_file_pkg=None, config_filename=None,
-                           abs_config_path=None):
+                           abs_config_path=None, use_her=False):
         """
         Load a trained model. Use only with predict function, as the logs will not be saved.
 
@@ -163,6 +196,7 @@ class SAC(core.BasicModel):
             config_file_pkg (str): The package name of the config file. Use the same package as model_pkg if not provided.
             config_filename (str): The name of the config file.
             abs_config_path (str): The absolute path to the config file.
+            use_her (bool): Whether to use Hindsight Experience Replay. Only valid for goal-conditioned envs.
         Returns:
             model: The loaded model.
         """
@@ -178,6 +212,7 @@ class SAC(core.BasicModel):
 
         model = SAC(env=env, save_model_path=model_path, log_path=model_path, model_pkg_path=model_pkg,
                     load_trained=True, load_model_path=model_path, config_file_pkg=config_file_pkg,
-                    config_filename=config_filename, abs_config_path=abs_config_path)
+                    config_filename=config_filename, abs_config_path=abs_config_path,
+                    use_her=use_her)
 
         return model
