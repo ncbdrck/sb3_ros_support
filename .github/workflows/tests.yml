@@ -13,7 +13,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.10"]
+        # 3.8 = ROS Noetic's bundled Python.
+        # 3.10 = forward-compat check.
+        # 3.12 = forward-compat check (setup.py migrated to setuptools).
+        python-version: ["3.8", "3.10", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
