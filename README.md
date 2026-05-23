@@ -15,9 +15,29 @@ This package extends the functionality of SB3 models in [FRobs_RL](https://githu
  3. Support for training custom environments with [RealROS](https://github.com/ncbdrck/realros) or [MultiROS](https://github.com/ncbdrck/multiros) frameworks
  4. Updated for the new version of SB3 (Stable Baselines3) which uses **gymnasium** instead of **gym**.
 
+## Easiest install: one-shot script
+
+If you're starting fresh on Ubuntu 20.04, run the bootstrap installer
+that ships in this repo (and identically in every other ecosystem
+repo: UniROS, MultiROS, RealROS, rl_environments,
+rl_training_validation). It installs ROS Noetic, UniROS, this package,
+rl_environments (with all 4 robots' vendor packages + supporting
+description-extras + cube tracker), and rl_training_validation.
+
+```bash
+git clone https://github.com/ncbdrck/sb3_ros_support.git /tmp/uniros_bootstrap
+bash /tmp/uniros_bootstrap/install_uniros_stack.sh                # interactive
+bash /tmp/uniros_bootstrap/install_uniros_stack.sh -y             # unattended
+bash /tmp/uniros_bootstrap/install_uniros_stack.sh -p ~/my_ws -y  # custom path
+```
+
+The script asks once whether to install all components or pick per-
+component; refuses to run on non-Ubuntu-20.04 (Noetic requirement).
+The manual setup steps below still work for piece-by-piece installs.
+
 ## Prerequisites
 
-Before installing this package, make sure you have the following prerequisites:
+Before installing this package manually, make sure you have the following prerequisites:
 
 ### ROS Installation
 
