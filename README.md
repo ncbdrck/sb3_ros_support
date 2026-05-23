@@ -86,11 +86,10 @@ To get started, follow these steps:
    
 ## Usage
 
-you can refer to the [examples](https://github.com/ncbdrck/rl_training_validation) to see how to use this package to train robots using ROS and Stable Baselines3.
+You can refer to the [Docs](https://uniros.readthedocs.io/en/latest/guides/training.html#option-2-sb3-ros-support) or [examples](https://github.com/ncbdrck/rl_training_validation) to see how to use this package to train robots using ROS and Stable Baselines3.
 
-It also showcases:
+Examples also showcase:
 - How to use [RealROS](https://github.com/ncbdrck/realros) to create a real-world environment for RL applications.
-- Train the Rx200 robot directly in the real world to perform a simple reach task.
 - Use [MultiROS](https://github.com/ncbdrck/multiros) framework to create a simulation environment for the same robot and train it in the simulation environment. Then transfer the learned policy to the real-world environment.
 - Train both environments (sim and real) in real-time to obtain a generalised policy that performs well in both environments.
 
