@@ -89,7 +89,7 @@ class TD3(core.BasicModel):
                                          file_abs_path=abs_config_path)
 
         # --- Init superclass
-        super().__init__(env, save_model_path, log_path, parm_dict, load_trained=load_trained)
+        super().__init__(env, save_model_path, log_path, parm_dict, load_trained=load_trained, seed=seed)
 
         if load_trained:
             rospy.logwarn("Loading trained model")

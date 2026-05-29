@@ -89,7 +89,7 @@ class DQN(core.BasicModel):
                                          file_abs_path=abs_config_path)
 
         # --- Init superclass. DQN has discrete actions, so no action_noise.
-        super().__init__(env, save_model_path, log_path, parm_dict, load_trained=load_trained, action_noise=False)
+        super().__init__(env, save_model_path, log_path, parm_dict, load_trained=load_trained, action_noise=False, seed=seed)
 
         if load_trained:
             rospy.logwarn("Loading trained model")

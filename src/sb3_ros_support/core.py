@@ -30,7 +30,8 @@ class BasicModel:
 
     def __init__(self, env: Any, save_model_path: str, log_path: str,
                  parm_dict: Dict[str, Any], load_trained: bool = False,
-                 action_noise_type: str = "normal", action_noise: bool = True) -> None:
+                 action_noise_type: str = "normal", action_noise: bool = True,
+                 seed: Optional[int] = None) -> None:
         """
         Args:
             env (gym.Env): The environment to be used.
@@ -40,6 +41,11 @@ class BasicModel:
             load_trained (bool): Whether to load a trained model or not.
             action_noise_type (str): The type of action noise to use. Can be "normal" or "ornstein". (Optional)
             action_noise (bool): Whether to use action noise or not. (Optional)
+            seed (int): If provided, appended to ``save_prefix`` /
+                ``trained_model_name`` / ``log_folder`` as
+                ``_s<seed>_<YYYYmmdd_HHMMSS>`` so every run lands in
+                its own checkpoint + log directory (no clobber across
+                seeds or repeat runs).
         """
 
         self.env = env
@@ -48,6 +54,16 @@ class BasicModel:
         self.save_trained_model_path = None
         self.model = None
         self.parm_dict = parm_dict
+
+        # Per-run suffix used by save_prefix, trained_model_name and
+        # log_folder so repeated runs (same seed or otherwise) never
+        # clobber a previous run's artifacts. Frozen once at
+        # construction so all three sites resolve to the same suffix.
+        if seed is not None:
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            self._run_tag = f"_s{seed}_{ts}"
+        else:
+            self._run_tag = ""
 
         if load_trained is False:
             # --- Policy kwargs
@@ -61,7 +77,7 @@ class BasicModel:
 
             # --- Callback
             save_freq = parm_dict["save_freq"]
-            save_prefix = parm_dict["save_prefix"]
+            save_prefix = parm_dict["save_prefix"] + self._run_tag
             self.checkpoint_callback = CheckpointCallback(save_freq=save_freq, save_path=save_model_path,
                                                           name_prefix=save_prefix)
 
@@ -108,9 +124,11 @@ class BasicModel:
         """
 
         # --- Model name
-        trained_model_name = self.parm_dict["trained_model_name"]
+        trained_model_name = self.parm_dict["trained_model_name"] + self._run_tag
 
-        # If file exists, name the new model with a suffix
+        # If file exists, name the new model with a further timestamp
+        # suffix. (When seed was passed, ``_run_tag`` already carries a
+        # construction-time stamp so collisions are extremely rare.)
         self.save_trained_model_path = self.save_model_path + trained_model_name
         if os.path.isfile(self.save_model_path + trained_model_name + ".zip"):
             now = datetime.now()
@@ -142,12 +160,21 @@ class BasicModel:
         """
         Function to set a logger of the model.
 
+        The log directory is composed as
+        ``<log_path>/<log_folder><run_tag>`` where ``run_tag`` is the
+        per-run ``_s<seed>_<timestamp>`` suffix (empty when no seed was
+        supplied). If the resulting directory already exists (e.g. two
+        runs collide within a one-second timestamp window), an extra
+        timestamp segment is appended so the new logger never writes
+        over an existing run's TensorBoard data.
+
         Returns:
             bool: True if the logger was set, False otherwise.
         """
-        log_folder = self.parm_dict["log_folder"]
+        log_folder = self.parm_dict["log_folder"] + self._run_tag
         log_path = self.log_path + log_folder
-        assert not os.path.exists(log_path), "Log folder already exists, to log into that folder first delete it."
+        if os.path.exists(log_path):
+            log_path = log_path + "_" + datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         new_logger = configure(log_path + '/', ["stdout", "csv", "tensorboard"])
         self.model.set_logger(new_logger)
 
