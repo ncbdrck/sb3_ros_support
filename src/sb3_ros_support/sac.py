@@ -33,7 +33,8 @@ class SAC(core.BasicModel):
                  config_file_pkg: Optional[str] = None,
                  config_filename: Optional[str] = None,
                  abs_config_path: Optional[str] = None,
-                 use_her: bool = False) -> None:
+                 use_her: bool = False,
+                 seed: Optional[int] = None) -> None:
         """
         Args:
             env (gym.Env): The environment to be used.
@@ -46,6 +47,8 @@ class SAC(core.BasicModel):
             config_filename (str): The name of the config file. Required if abs_config_path is not provided.
             abs_config_path (str): The absolute path to the config file. Required if config_file_pkg and config_filename are not provided.
             use_her (bool): Whether to use Hindsight Experience Replay. Only valid for goal-conditioned envs (Dict obs space).
+            seed (int): If provided, overrides the YAML ``sac_params.seed``
+                for the SB3 learner (PyTorch / replay-buffer RNG).
         """
         policy = "MultiInputPolicy" if sb3_common.is_dict_obs_space(env) else "MlpPolicy"
 
@@ -123,7 +126,7 @@ class SAC(core.BasicModel):
             target_update_interval=p["target_update_interval"],
             target_entropy=p["target_entropy"],
             train_freq=(p["train_freq"]["freq"], p["train_freq"]["unit"]),
-            seed=p["seed"],
+            seed=seed if seed is not None else p["seed"],
         )
 
         # HER replay buffer (only for goal-conditioned envs).

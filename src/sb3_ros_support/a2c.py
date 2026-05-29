@@ -24,7 +24,8 @@ class A2C(core.BasicModel):
                  load_model_path: Optional[str] = None,
                  config_file_pkg: Optional[str] = None,
                  config_filename: Optional[str] = None,
-                 abs_config_path: Optional[str] = None) -> None:
+                 abs_config_path: Optional[str] = None,
+                 seed: Optional[int] = None) -> None:
         """
         Args:
             env (gym.Env): The environment to be used.
@@ -36,6 +37,8 @@ class A2C(core.BasicModel):
             config_file_pkg (str): The package name of the config file. Required if abs_config_path is not provided.
             config_filename (str): The name of the config file. Required if abs_config_path is not provided.
             abs_config_path (str): The absolute path to the config file. Required if config_file_pkg and config_filename are not provided.
+            seed (int): If provided, overrides the YAML ``a2c_params.seed``
+                for the SB3 learner (PyTorch / rollout RNG).
         """
 
         rospy.loginfo("Init A2C Policy")
@@ -101,7 +104,7 @@ class A2C(core.BasicModel):
             model_use_rms_prop = parm_dict["a2c_params"]["use_rms_prop"]
             model_rms_prop_eps = parm_dict["a2c_params"]["rms_prop_eps"]
             model_norm_advant = parm_dict["a2c_params"]["normalize_advantage"]
-            model_seed = parm_dict["a2c_params"]["seed"]
+            model_seed = seed if seed is not None else parm_dict["a2c_params"]["seed"]
 
             # --- Create or load model
             if parm_dict["load_model"]:  # Load model

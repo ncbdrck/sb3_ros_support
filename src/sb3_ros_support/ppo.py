@@ -24,7 +24,8 @@ class PPO(core.BasicModel):
                  load_model_path: Optional[str] = None,
                  config_file_pkg: Optional[str] = None,
                  config_filename: Optional[str] = None,
-                 abs_config_path: Optional[str] = None) -> None:
+                 abs_config_path: Optional[str] = None,
+                 seed: Optional[int] = None) -> None:
         """
         Args:
             env (gym.Env): The environment to be used.
@@ -36,6 +37,8 @@ class PPO(core.BasicModel):
             config_file_pkg (str): The package name of the config file. Required if abs_config_path is not provided.
             config_filename (str): The name of the config file. Required if abs_config_path is not provided.
             abs_config_path (str): The absolute path to the config file. Required if config_file_pkg and config_filename are not provided.
+            seed (int): If provided, overrides the YAML ``ppo_params.seed``
+                for the SB3 learner (PyTorch / rollout RNG).
         """
 
         rospy.loginfo("Init PPO Policy")
@@ -101,7 +104,7 @@ class PPO(core.BasicModel):
             model_ent_coef = parm_dict["ppo_params"]["ent_coef"]
             model_vf_coef = parm_dict["ppo_params"]["vf_coef"]
             model_max_grad_norm = parm_dict["ppo_params"]["max_grad_norm"]
-            model_seed = parm_dict["ppo_params"]["seed"]
+            model_seed = seed if seed is not None else parm_dict["ppo_params"]["seed"]
 
             # --- Create or load model
             if parm_dict["load_model"]:  # Load model
