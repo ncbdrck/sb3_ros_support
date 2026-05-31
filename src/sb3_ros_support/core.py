@@ -54,6 +54,10 @@ class BasicModel:
         self.save_trained_model_path = None
         self.model = None
         self.parm_dict = parm_dict
+        # Remember whether this instance is a fresh training run or a reload (used so optional
+        # Weights & Biases monitoring only starts a run during training, not during validation).
+        self.load_trained = load_trained
+        self._wandb_run = None
 
         # Per-run suffix used by save_prefix, trained_model_name and
         # log_folder so repeated runs (same seed or otherwise) never
@@ -175,10 +179,49 @@ class BasicModel:
         log_path = self.log_path + log_folder
         if os.path.exists(log_path):
             log_path = log_path + "_" + datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        # Start the optional W&B run BEFORE the TensorBoard writer is created so that, with
+        # sync_tensorboard=True, every metric SB3 writes to TensorBoard is mirrored to W&B
+        # without any per-algorithm changes.
+        self._maybe_init_wandb(log_path)
         new_logger = configure(log_path + '/', ["stdout", "csv", "tensorboard"])
         self.model.set_logger(new_logger)
 
         return True
+
+    def _maybe_init_wandb(self, log_dir: str) -> None:
+        """
+        Start a Weights & Biases run that mirrors the TensorBoard metrics, if enabled.
+
+        Opt-in via the config: set ``use_wandb: True`` (and optionally a ``wandb_params`` block
+        with ``project`` / ``entity``). Off by default, so TensorBoard remains the standalone
+        local option. Skipped for reloaded models (validation) and degrades to a warning if the
+        ``wandb`` package is not installed, so training never breaks on account of monitoring.
+        """
+        if self.load_trained:
+            return
+        if not self.parm_dict.get("use_wandb", False):
+            return
+
+        try:
+            import wandb
+        except ImportError:
+            rospy.logwarn("use_wandb is set but the 'wandb' package is not installed; "
+                          "skipping W&B (install with: pip install wandb).")
+            return
+
+        # configure() creates this dir later; make it now so wandb.init(dir=...) is happy.
+        os.makedirs(log_dir, exist_ok=True)
+        wandb_params = self.parm_dict.get("wandb_params") or {}
+        self._wandb_run = wandb.init(
+            project=wandb_params.get("project", "uniros"),
+            entity=wandb_params.get("entity"),
+            name=self.parm_dict["log_folder"] + self._run_tag,
+            config=self.parm_dict,
+            sync_tensorboard=True,
+            dir=log_dir,
+            reinit=True,
+        )
+        rospy.logwarn("Weights & Biases monitoring enabled: " + str(self._wandb_run.url))
 
     def close_env(self) -> bool:
         """
@@ -189,6 +232,9 @@ class BasicModel:
         """
 
         self.env.close()
+        if self._wandb_run is not None:
+            self._wandb_run.finish()
+            self._wandb_run = None
         return True
 
     def check_env(self) -> bool:
