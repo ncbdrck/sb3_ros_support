@@ -19,6 +19,13 @@
   log_interval: 4 # The number of episodes between logs
   reset_num_timesteps: False # If true, will reset the number of timesteps to 0 every training 
 
+  # Optional Weights & Biases monitoring (mirrors the TensorBoard metrics to a hosted web UI).
+  # Off by default; requires `pip install wandb` + `wandb login`. Leave entity blank for your default.
+  use_wandb: False
+  wandb_params:
+    project: uniros
+    entity:
+
   # Use custom policy
   use_custom_policy: False
   policy_params:
