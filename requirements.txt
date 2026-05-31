@@ -1,31 +1,24 @@
 # SB3 Requirements
+#
+# Install with: python3 -m pip install -r requirements.txt
 
-# To install required packages use:
-# python3 -m pip install -r requirements.txt
-
-# stable-baselines3 for RL algorithms
-# 1.8.0 is the last version that supports gym.
-# Starting from 2.0.0, stable-baselines3 only suppoerts Gymnasium
+# stable-baselines3 — 2.0+ is Gymnasium-only; 1.8.0 is the last gym
+# release if you need to downgrade for legacy envs.
 stable_baselines3==2.2.1
-# how to downgrade stable-baselines3
-# pip install stable-baselines3==1.8.0
 
-# NumPy for numerical computations
+# Numerical + config
 numpy==1.23.3
-
-# pyyaml for loading YAML files
 pyyaml
 
-# other dependencies
-torch>=2.1.0
+# RL API
 gymnasium==0.29.1
 gymnasium-robotics==1.2.4
+
+# Torch + logging
+torch>=2.1.0
 tensorboard
 
-# Optional: Weights & Biases for cloud logging (mirrors the TensorBoard metrics).
-# Lazy-imported and only used when a config sets use_wandb: True, so it is not required;
-# training falls back to TensorBoard if it is absent. Tested with wandb 0.16.5.
+# Optional cloud logging. Uncomment to install; the code lazy-imports
+# wandb and only activates when a config sets use_wandb: True, so this
+# stays a soft dependency. Tested with 0.16.5.
 # wandb>=0.16.5
-
-fsspec==2023.12.2
-
