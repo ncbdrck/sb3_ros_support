@@ -18,7 +18,9 @@ gymnasium-robotics==1.2.4
 torch>=2.1.0
 tensorboard
 
-# Optional cloud logging. Uncomment to install; the code lazy-imports
-# wandb and only activates when a config sets use_wandb: True, so this
-# stays a soft dependency. Tested with 0.16.5.
-# wandb>=0.16.5
+# Cloud logging (Weights & Biases). The training configs default to
+# use_wandb: True, so it is installed by default. The code still
+# lazy-imports wandb and only activates when a config sets
+# use_wandb: True, so set that to False (and you may drop this line)
+# for a fully offline setup. Tested with 0.16.5.
+wandb>=0.16.5
